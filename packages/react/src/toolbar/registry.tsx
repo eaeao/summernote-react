@@ -57,14 +57,14 @@ const FORMAT: Record<string, FormatSpec> = {
 };
 
 function FormatButton({ name }: { name: string }): JSX.Element | null {
-  const { state, lang, options } = useChrome();
+  const { state, lang, options, codeviewActive } = useChrome();
   const cmd = useCommand();
   const spec = FORMAT[name];
   if (!spec) {
     return null;
   }
   const active = spec.isActive ? spec.isActive(state) : false;
-  const disabled = spec.isDisabled ? spec.isDisabled(state) : false;
+  const disabled = codeviewActive || (spec.isDisabled ? spec.isDisabled(state) : false);
   const title = spec.title(lang);
   return (
     <button
@@ -99,19 +99,24 @@ const ACTION: Record<string, ActionSpec> = {
 };
 
 function ActionButton({ name }: { name: string }): JSX.Element | null {
-  const { lang, options, ui } = useChrome();
+  const { lang, options, ui, codeviewActive } = useChrome();
   const spec = ACTION[name];
   if (!spec) {
     return null;
   }
   const title = spec.title(lang);
   const handler = ui[spec.action];
+  // codeview + fullscreen stay enabled in codeview; the rest disable
+  const disabled = codeviewActive && name !== 'codeview' && name !== 'fullscreen';
+  const active = name === 'codeview' && codeviewActive;
   return (
     <button
       type="button"
-      className={`note-btn note-btn-${name}`}
+      className={`note-btn note-btn-${name}${active ? ' active' : ''}`}
       title={title}
       aria-label={title}
+      aria-pressed={name === 'codeview' ? active : undefined}
+      disabled={disabled}
       onMouseDown={(e) => e.preventDefault()}
       onClick={() => handler?.()}
     >

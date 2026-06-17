@@ -21,6 +21,8 @@ export interface ChromeValue {
   readonly options: ChromeOptions;
   /** dialog/view-toggle handlers; partial while those tracks land. */
   readonly ui: Partial<ChromeUI>;
+  /** true while the codeview textarea is showing — the toolbar disables (except codeview). */
+  readonly codeviewActive: boolean;
 }
 
 const ChromeContext = createContext<ChromeValue | null>(null);

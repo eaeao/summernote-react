@@ -13,6 +13,8 @@ export interface DropdownProps {
   menuClassName?: string;
   /** right-align the menu (color picker). */
   alignRight?: boolean;
+  /** disable the toggle (e.g. while codeview is active). */
+  disabled?: boolean;
 }
 
 /**
@@ -27,6 +29,7 @@ export function Dropdown({
   children,
   menuClassName,
   alignRight,
+  disabled,
 }: DropdownProps): JSX.Element {
   const [open, setOpen] = useState(false);
   const groupRef = useRef<HTMLDivElement | null>(null);
@@ -64,6 +67,7 @@ export function Dropdown({
         aria-expanded={open}
         aria-haspopup="menu"
         aria-controls={menuId}
+        disabled={disabled}
         // mousedown must not blur the editable selection
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => setOpen((v) => !v)}

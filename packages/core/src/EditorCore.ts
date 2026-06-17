@@ -18,6 +18,7 @@ import wrappedRange from './core/range';
 import { History } from './editing/History';
 import { Style } from './editing/Style';
 import { Bullet } from './editing/Bullet';
+import Table from './editing/Table';
 
 export interface EditorState {
   readonly bold: boolean;
@@ -65,6 +66,18 @@ function selectRange(range: Range): void {
 // Stateless editing-engine services shared by the commands.
 const style = new Style();
 const bullet = new Bullet();
+const table = new Table();
+
+/** run a table command on the current selection's WrappedRange (which must be inside a cell). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function tableCmd(fn: (rng: any) => void): boolean {
+  const rng = wrappedRange.create();
+  if (!rng) {
+    return false;
+  }
+  fn(rng);
+  return true;
+}
 
 /** apply a block-level style (e.g. text-align) to the paragraphs in the current selection. */
 function applyBlockStyle(styleInfo: Record<string, string>): boolean {
@@ -231,6 +244,25 @@ const COMMANDS: Record<string, Command> = {
     }
     return true;
   },
+
+  // --- table commands (own surgery via the ported Table engine) ---
+  insertTable: (_core, ...args): boolean => {
+    const [colStr, rowStr] = String(args[0] ?? '1x1').split('x');
+    const colCount = parseInt(colStr ?? '1', 10) || 1;
+    const rowCount = parseInt(rowStr ?? '1', 10) || 1;
+    const rng = wrappedRange.create();
+    if (!rng) {
+      return false;
+    }
+    const tableEl = table.createTable(colCount, rowCount, { tableClassName: 'table table-bordered' });
+    rng.deleteContents().insertNode(tableEl);
+    return true;
+  },
+  addRow: (_core, ...args): boolean => tableCmd((rng) => table.addRow(rng, String(args[0] ?? 'bottom'))),
+  addCol: (_core, ...args): boolean => tableCmd((rng) => table.addCol(rng, String(args[0] ?? 'right'))),
+  deleteRow: (): boolean => tableCmd((rng) => table.deleteRow(rng)),
+  deleteCol: (): boolean => tableCmd((rng) => table.deleteCol(rng)),
+  deleteTable: (): boolean => tableCmd((rng) => table.deleteTable(rng)),
 
   undo(core): boolean {
     return core.undo();

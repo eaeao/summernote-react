@@ -646,7 +646,12 @@ export class Table {
     trHTML = trs.join('');
     const $table = this.fromHTML('<table>' + trHTML + '</table>') as HTMLTableElement;
     if (options && options.tableClassName) {
-      $table.classList.add(options.tableClassName);
+      // jQuery .addClass accepts space-separated classes; classList.add rejects them — split.
+      for (const cls of String(options.tableClassName).split(/\s+/)) {
+        if (cls) {
+          $table.classList.add(cls);
+        }
+      }
     }
 
     return $table;

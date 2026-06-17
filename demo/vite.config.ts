@@ -10,6 +10,13 @@ const fromRoot = (p: string): string => fileURLToPath(new URL(p, import.meta.url
 export default defineConfig(({ command }) => ({
   base: command === 'build' ? '/summernote-react/' : '/',
   plugins: [react()],
+  // the demo imports editor source (incl. font assets) from the repo root, one level above demo/.
+  // allow Vite to serve files from there.
+  server: {
+    fs: {
+      allow: [fromRoot('..')],
+    },
+  },
   resolve: {
     dedupe: ['react', 'react-dom'],
     alias: {

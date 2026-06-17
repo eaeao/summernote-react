@@ -11,6 +11,8 @@ export type { UseSummernoteResult } from './useSummernote';
 export { definePlugin } from './plugin';
 export type { SummernotePlugin } from './plugin';
 export { helloPlugin } from './plugins/hello';
+export { specialcharsPlugin } from './plugins/specialchars';
+export { databasicPlugin } from './plugins/databasic';
 
 export { Toolbar } from './toolbar/Toolbar';
 export type { ToolbarProps } from './toolbar/Toolbar';

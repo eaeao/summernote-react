@@ -1,5 +1,11 @@
 # @eaeao/summernote-react
 
+## 1.0.3
+
+### Patch Changes
+
+- Add npm package metadata (author, homepage, repository, bugs, keywords)
+
 ## 1.0.2
 
 ### Patch Changes

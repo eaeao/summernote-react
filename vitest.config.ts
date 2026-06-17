@@ -17,7 +17,7 @@ export default defineConfig({
     setupFiles: ['./test/setup.ts'],
     // Only the ported TS specs run here; legacy test/base/**/*.spec.js (jQuery) are the
     // golden-corpus extraction source, not run by this config.
-    include: ['packages/**/test/**/*.spec.ts', 'test/**/*.spec.ts'],
+    include: ['packages/**/test/**/*.spec.{ts,tsx}', 'test/**/*.spec.{ts,tsx}'],
     browser: {
       enabled: true,
       provider: 'playwright',

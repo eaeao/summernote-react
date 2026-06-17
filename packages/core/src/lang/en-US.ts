@@ -161,7 +161,22 @@ export const langEnUS = {
   },
 } as const;
 
-/** the canonical language-pack shape; every locale is a deep-partial override of en-US. */
+/** the canonical language-pack shape; every locale is a deep-partial override of en-US.
+ * (`-readonly` strips the readonly that the `as const` base would otherwise propagate.) */
 export type Lang = {
-  [K in keyof typeof langEnUS]: { [P in keyof (typeof langEnUS)[K]]: string };
+  -readonly [K in keyof typeof langEnUS]: { -readonly [P in keyof (typeof langEnUS)[K]]: string };
 };
+
+/** a locale: any subset of groups/keys (legacy locales may carry extra keys, hence the loose
+ * shape); missing entries fall back to en-US via resolveLang. */
+export type LangPartial = Record<string, Record<string, string> | undefined>;
+
+/** deep-merge a locale over en-US so every key resolves (missing -> English fallback). */
+export function resolveLang(partial: LangPartial): Lang {
+  const base = langEnUS as unknown as Record<string, Record<string, string>>;
+  const out: Record<string, Record<string, string>> = {};
+  for (const group of Object.keys(base)) {
+    out[group] = { ...base[group], ...(partial[group] ?? {}) };
+  }
+  return out as unknown as Lang;
+}

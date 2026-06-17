@@ -10,7 +10,15 @@ import {
   type FC,
   type ReactNode,
 } from 'react';
-import { defaultOptions, langEnUS, type EditorCore, type EditorCoreOptions, type ToolbarGroup } from '@summernote/core';
+import {
+  defaultOptions,
+  langEnUS,
+  resolveLang,
+  type EditorCore,
+  type EditorCoreOptions,
+  type LangPartial,
+  type ToolbarGroup,
+} from '@summernote/core';
 import { useSummernote } from './useSummernote';
 import { Toolbar } from './toolbar/Toolbar';
 import { ChromeProvider, type ChromeValue, type ChromeUI } from './chrome/ChromeContext';
@@ -56,6 +64,8 @@ export interface SummernoteEditorProps {
   plugins?: readonly SummernotePlugin[];
   /** visual theme (per-instance — multiple editors with different themes can coexist). */
   theme?: 'lite' | 'bs3' | 'bs4' | 'bs5';
+  /** locale (a LangPartial deep-merged over en-US), e.g. lang={locales['ko-KR']}. */
+  lang?: LangPartial;
   className?: string;
 }
 
@@ -68,7 +78,8 @@ export interface SummernoteEditorProps {
  */
 export const SummernoteEditor = forwardRef<SummernoteEditorHandle, SummernoteEditorProps>(
   function SummernoteEditor(props, ref): JSX.Element {
-  const { value, defaultValue, onChange, options, toolbar, placeholder, disableResize, plugins, theme, className } = props;
+  const { value, defaultValue, onChange, options, toolbar, placeholder, disableResize, plugins, theme, lang, className } =
+    props;
   const lastEmitted = useRef<string | null>(null);
   const editingAreaRef = useRef<HTMLDivElement | null>(null);
   const initial = value ?? defaultValue;
@@ -200,9 +211,11 @@ export const SummernoteEditor = forwardRef<SummernoteEditorHandle, SummernoteEdi
     return false;
   };
 
+  const resolvedLang = useMemo(() => (lang ? resolveLang(lang) : langEnUS), [lang]);
+
   const chrome = useMemo<ChromeValue>(
-    () => ({ core, state, lang: langEnUS, options: chromeOptions, ui, codeviewActive: codeview }),
-    [core, state, chromeOptions, ui, codeview],
+    () => ({ core, state, lang: resolvedLang, options: chromeOptions, ui, codeviewActive: codeview }),
+    [core, state, resolvedLang, chromeOptions, ui, codeview],
   );
 
   const rootClass = [

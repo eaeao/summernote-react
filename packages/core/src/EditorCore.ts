@@ -190,6 +190,48 @@ const COMMANDS: Record<string, Command> = {
   formatH5: (): boolean => formatBlock('h5'),
   formatH6: (): boolean => formatBlock('h6'),
 
+  insertHorizontalRule: (): boolean => {
+    const rng = wrappedRange.create();
+    if (!rng) {
+      return false;
+    }
+    rng.insertNode(dom.create('HR'));
+    return true;
+  },
+  createLink: (_core, ...args): boolean => {
+    const opts = (args[0] ?? {}) as { url?: string; text?: string; newWindow?: boolean };
+    const url = opts.url ?? '';
+    const native = currentRange();
+    if (url === '' || !native) {
+      return false;
+    }
+    const a = dom.create('A') as HTMLAnchorElement;
+    a.setAttribute('href', url);
+    if (opts.newWindow === true) {
+      a.setAttribute('target', '_blank');
+      a.setAttribute('rel', 'noopener noreferrer');
+    }
+    if (!native.collapsed) {
+      a.appendChild(native.extractContents());
+    } else {
+      a.textContent = opts.text !== undefined && opts.text !== '' ? opts.text : url;
+    }
+    native.insertNode(a);
+    selectRange(native);
+    return true;
+  },
+  unlink: (): boolean => {
+    const rng = wrappedRange.create();
+    if (!rng) {
+      return false;
+    }
+    const anchor = dom.ancestor(rng.sc, dom.isAnchor) as HTMLElement | null;
+    if (anchor) {
+      unwrapEl(anchor);
+    }
+    return true;
+  },
+
   undo(core): boolean {
     return core.undo();
   },

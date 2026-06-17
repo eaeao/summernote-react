@@ -14,7 +14,10 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./styles.css": "./src/styles/summernote-lite.css"
+    "./styles.css": "./src/styles/summernote-lite.css",
+    "./themes/bs3.css": "./src/styles/themes/bs3.css",
+    "./themes/bs4.css": "./src/styles/themes/bs4.css",
+    "./themes/bs5.css": "./src/styles/themes/bs5.css"
   },
   "files": [
     "dist",

@@ -54,6 +54,8 @@ export interface SummernoteEditorProps {
   disableResize?: boolean;
   /** plugins: per-instance commands + custom toolbar buttons. */
   plugins?: readonly SummernotePlugin[];
+  /** visual theme (per-instance — multiple editors with different themes can coexist). */
+  theme?: 'lite' | 'bs3' | 'bs4' | 'bs5';
   className?: string;
 }
 
@@ -66,7 +68,7 @@ export interface SummernoteEditorProps {
  */
 export const SummernoteEditor = forwardRef<SummernoteEditorHandle, SummernoteEditorProps>(
   function SummernoteEditor(props, ref): JSX.Element {
-  const { value, defaultValue, onChange, options, toolbar, placeholder, disableResize, plugins, className } = props;
+  const { value, defaultValue, onChange, options, toolbar, placeholder, disableResize, plugins, theme, className } = props;
   const lastEmitted = useRef<string | null>(null);
   const editingAreaRef = useRef<HTMLDivElement | null>(null);
   const initial = value ?? defaultValue;
@@ -203,7 +205,13 @@ export const SummernoteEditor = forwardRef<SummernoteEditorHandle, SummernoteEdi
     [core, state, chromeOptions, ui, codeview],
   );
 
-  const rootClass = ['note-editor', 'note-frame', fullscreen ? 'fullscreen' : '', className ?? '']
+  const rootClass = [
+    'note-editor',
+    'note-frame',
+    `note-theme-${theme ?? 'lite'}`,
+    fullscreen ? 'fullscreen' : '',
+    className ?? '',
+  ]
     .filter(Boolean)
     .join(' ');
   const showPlaceholder = !codeview && placeholder !== undefined && placeholder !== '' && isEmptyHtml(html);

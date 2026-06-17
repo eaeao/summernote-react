@@ -1,0 +1,47 @@
+/*
+ * Bootstrap 4 theme skin — scoped overrides over the lite base (import styles.css first). Applied
+ * only to theme="bs4" editors (.note-theme-bs4). Same .note-* markup; Bootstrap 4 aesthetic, no
+ * Bootstrap dependency.
+ */
+.note-editor.note-theme-bs4 {
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+.note-editor.note-theme-bs4 .note-toolbar {
+  background: #f8f9fa;
+  border-bottom: 1px solid #ced4da;
+  border-radius: 0.25rem 0.25rem 0 0;
+}
+.note-editor.note-theme-bs4 .note-btn {
+  color: #212529;
+  background: #fff;
+  border-color: #ced4da;
+}
+.note-editor.note-theme-bs4 .note-btn:hover {
+  background: #e2e6ea;
+}
+.note-editor.note-theme-bs4 .note-btn.active {
+  color: #fff;
+  background: #007bff;
+  border-color: #007bff;
+}
+.note-editor.note-theme-bs4 .note-btn-group > .note-btn:first-child {
+  border-radius: 0.25rem 0 0 0.25rem;
+}
+.note-editor.note-theme-bs4 .note-btn-group > .note-btn:last-child {
+  border-radius: 0 0.25rem 0.25rem 0;
+}
+.note-editor.note-theme-bs4 .note-dropdown-menu {
+  border-radius: 0.25rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
+}
+.note-editor.note-theme-bs4 .note-statusbar {
+  background: #f8f9fa;
+  border-top: 1px solid #ced4da;
+  border-radius: 0 0 0.25rem 0.25rem;
+}
+.note-editor.note-theme-bs4 .note-btn-primary {
+  background: #007bff;
+  border-color: #007bff;
+}

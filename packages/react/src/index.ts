@@ -5,6 +5,7 @@ export const REACT_BINDINGS_VERSION = '0.0.0';
 
 export { SummernoteEditor } from './SummernoteEditor';
 export type { SummernoteEditorProps, SummernoteEditorHandle } from './SummernoteEditor';
+export type ThemeName = 'lite' | 'bs3' | 'bs4' | 'bs5';
 export { useSummernote } from './useSummernote';
 export type { UseSummernoteResult } from './useSummernote';
 export { definePlugin } from './plugin';

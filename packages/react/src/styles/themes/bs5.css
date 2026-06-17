@@ -1,0 +1,52 @@
+/*
+ * Bootstrap 5 theme skin — scoped overrides over the lite base (import styles.css first, then
+ * this). Per-instance: applied only to editors with theme="bs5" (.note-theme-bs5), so themes
+ * coexist on one page (the legacy global-$.summernote.ui limitation is gone). Same .note-* markup;
+ * this is purely cosmetic (Bootstrap 5 aesthetic — no Bootstrap JS/CSS dependency).
+ */
+.note-editor.note-theme-bs5 {
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+.note-editor.note-theme-bs5 .note-toolbar {
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  border-radius: 0.375rem 0.375rem 0 0;
+}
+.note-editor.note-theme-bs5 .note-btn {
+  color: #212529;
+  background: #fff;
+  border-color: #dee2e6;
+}
+.note-editor.note-theme-bs5 .note-btn:hover {
+  background: #e9ecef;
+}
+.note-editor.note-theme-bs5 .note-btn.active {
+  color: #fff;
+  background: #0d6efd;
+  border-color: #0d6efd;
+}
+.note-editor.note-theme-bs5 .note-btn-group > .note-btn:first-child {
+  border-radius: 0.375rem 0 0 0.375rem;
+}
+.note-editor.note-theme-bs5 .note-btn-group > .note-btn:last-child {
+  border-radius: 0 0.375rem 0.375rem 0;
+}
+.note-editor.note-theme-bs5 .note-dropdown-menu {
+  border-radius: 0.375rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+.note-editor.note-theme-bs5 .note-statusbar {
+  background: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+  border-radius: 0 0 0.375rem 0.375rem;
+}
+.note-theme-bs5 .note-modal-content,
+.note-editor.note-theme-bs5 ~ .note-modal .note-modal-content {
+  border-radius: 0.5rem;
+}
+.note-editor.note-theme-bs5 .note-btn-primary {
+  background: #0d6efd;
+  border-color: #0d6efd;
+}

@@ -58,3 +58,6 @@ selenium-debug.log
 
 # build files
 dist/
+
+# vitest browser-mode artifacts
+__screenshots__/

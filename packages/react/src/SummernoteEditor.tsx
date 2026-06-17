@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { defaultOptions, langEnUS, type EditorCoreOptions, type ToolbarGroup } from '@summernote/core';
 import { useSummernote } from './useSummernote';
 import { Toolbar } from './toolbar/Toolbar';
 import { ChromeProvider, type ChromeValue, type ChromeUI } from './chrome/ChromeContext';
+import { LinkDialog, ImageDialog, VideoDialog, HelpDialog } from './chrome/dialogs';
+
+type DialogKind = 'link' | 'image' | 'video' | 'help' | null;
 
 export interface SummernoteEditorProps {
   /** controlled HTML value */
@@ -55,8 +58,25 @@ export function SummernoteEditor(props: SummernoteEditorProps): JSX.Element {
     [toolbar],
   );
 
-  // dialog/view handlers land in later tracks; empty until then (those buttons no-op).
-  const ui = useMemo<Partial<ChromeUI>>(() => ({}), []);
+  const [dialog, setDialog] = useState<DialogKind>(null);
+  const closeDialog = useCallback((): void => {
+    setDialog(null);
+    core?.focus();
+  }, [core]);
+
+  const ui = useMemo<Partial<ChromeUI>>(() => {
+    const open = (kind: DialogKind): void => {
+      core?.saveRange(); // capture the selection before focus moves into the dialog
+      setDialog(kind);
+    };
+    return {
+      openLinkDialog: () => open('link'),
+      openImageDialog: () => open('image'),
+      openVideoDialog: () => open('video'),
+      openHelpDialog: () => open('help'),
+      // fullscreen / codeview land in the statusbar/view track
+    };
+  }, [core]);
 
   const chrome = useMemo<ChromeValue>(
     () => ({ core, state, lang: langEnUS, options: chromeOptions, ui }),
@@ -77,6 +97,10 @@ export function SummernoteEditor(props: SummernoteEditorProps): JSX.Element {
             aria-multiline="true"
           />
         </div>
+        {dialog === 'link' ? <LinkDialog onClose={closeDialog} /> : null}
+        {dialog === 'image' ? <ImageDialog onClose={closeDialog} /> : null}
+        {dialog === 'video' ? <VideoDialog onClose={closeDialog} /> : null}
+        {dialog === 'help' ? <HelpDialog onClose={closeDialog} /> : null}
       </div>
     </ChromeProvider>
   );

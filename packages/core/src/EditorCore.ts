@@ -364,12 +364,28 @@ const COMMANDS: Record<string, Command> = {
     if (url === '' || !native) {
       return false;
     }
+    const applyTarget = (a: HTMLAnchorElement): void => {
+      if (opts.newWindow === true) {
+        a.setAttribute('target', '_blank');
+        a.setAttribute('rel', 'noopener noreferrer');
+      } else {
+        a.removeAttribute('target');
+        a.removeAttribute('rel');
+      }
+    };
+    // editing an existing anchor: update href/text/target in place (no nested <a>)
+    const existing = dom.ancestor(native.startContainer, dom.isAnchor) as HTMLAnchorElement | null;
+    if (existing) {
+      existing.setAttribute('href', url);
+      if (opts.text !== undefined && opts.text !== '') {
+        existing.textContent = opts.text;
+      }
+      applyTarget(existing);
+      return true;
+    }
     const a = dom.create('A') as HTMLAnchorElement;
     a.setAttribute('href', url);
-    if (opts.newWindow === true) {
-      a.setAttribute('target', '_blank');
-      a.setAttribute('rel', 'noopener noreferrer');
-    }
+    applyTarget(a);
     if (!native.collapsed) {
       a.appendChild(native.extractContents());
     } else {

@@ -7,6 +7,7 @@ import { LinkDialog, ImageDialog, VideoDialog, HelpDialog } from './chrome/dialo
 import { Codeview } from './chrome/Codeview';
 import { Statusbar } from './chrome/Statusbar';
 import { Placeholder } from './chrome/Placeholder';
+import { PopoverHost } from './chrome/PopoverHost';
 
 type DialogKind = 'link' | 'image' | 'video' | 'help' | null;
 
@@ -41,6 +42,7 @@ export interface SummernoteEditorProps {
 export function SummernoteEditor(props: SummernoteEditorProps): JSX.Element {
   const { value, defaultValue, onChange, options, toolbar, placeholder, disableResize, className } = props;
   const lastEmitted = useRef<string | null>(null);
+  const editingAreaRef = useRef<HTMLDivElement | null>(null);
   const initial = value ?? defaultValue;
   const [html, setHtml] = useState<string>(initial ?? '');
 
@@ -122,7 +124,7 @@ export function SummernoteEditor(props: SummernoteEditorProps): JSX.Element {
     <ChromeProvider value={chrome}>
       <div className={rootClass}>
         <Toolbar />
-        <div className="note-editing-area">
+        <div className="note-editing-area" ref={editingAreaRef} style={{ position: 'relative' }}>
           {showPlaceholder ? <Placeholder text={placeholder} visible /> : null}
           <div
             ref={editableRef}
@@ -134,6 +136,7 @@ export function SummernoteEditor(props: SummernoteEditorProps): JSX.Element {
             style={codeview ? { display: 'none' } : undefined}
           />
           {codeview ? <Codeview value={codeHtml} onChange={setCodeHtml} /> : null}
+          <PopoverHost editingAreaRef={editingAreaRef} />
         </div>
         {!disableResize && !codeview ? <Statusbar targetRef={editableRef} /> : null}
         {dialog === 'link' ? <LinkDialog onClose={closeDialog} /> : null}

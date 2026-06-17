@@ -25,6 +25,7 @@ const INERT_STATE: EditorState = {
   align: null,
   formatBlock: null,
   link: false,
+  inTable: false,
   fontName: '',
   fontSize: '',
   fontSizeUnit: 'px',

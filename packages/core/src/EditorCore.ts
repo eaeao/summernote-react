@@ -47,6 +47,8 @@ export interface EditorState {
   readonly formatBlock: string | null;
   /** true when the caret/selection sits inside an anchor. */
   readonly link: boolean;
+  /** true when the caret/selection sits inside a table cell. */
+  readonly inTable: boolean;
   // --- value-based state (drives dropdown .checked + .note-current-* labels) ---
   /** first font-family at the caret, dequoted ('' when outside the editor). */
   readonly fontName: string;
@@ -491,6 +493,38 @@ const COMMANDS: Record<string, Command> = {
     return true;
   },
 
+  // --- image manipulation (the image popover passes the target <img>) ---
+  resizeImage: (_core, ...args): boolean => {
+    const img = args[0] as HTMLElement | undefined;
+    const value = String(args[1] ?? '');
+    if (!img) {
+      return false;
+    }
+    if (value === '' || value === 'none') {
+      img.style.removeProperty('width');
+      img.removeAttribute('width');
+    } else {
+      img.style.width = parseFloat(value) * 100 + '%';
+    }
+    return true;
+  },
+  floatImage: (_core, ...args): boolean => {
+    const img = args[0] as HTMLElement | undefined;
+    if (!img) {
+      return false;
+    }
+    img.style.cssFloat = String(args[1] ?? 'none');
+    return true;
+  },
+  removeMedia: (_core, ...args): boolean => {
+    const img = args[0] as HTMLElement | undefined;
+    if (!img || !img.parentNode) {
+      return false;
+    }
+    img.parentNode.removeChild(img);
+    return true;
+  },
+
   // --- video (parse the provider URL into an embed node, then insert) ---
   insertVideo: (_core, ...args): boolean => {
     const node = createVideoNode(String(args[0] ?? ''));
@@ -727,6 +761,7 @@ export class EditorCore {
       align: paraAnc !== null ? readAlign(paraAnc) : null,
       formatBlock: blockAnc !== null ? blockAnc.nodeName.toLowerCase() : null,
       link: sc !== null && dom.ancestor(sc, dom.isAnchor) !== null,
+      inTable: sc !== null && dom.ancestor(sc, dom.isCell) !== null,
       fontName: value.fontName,
       fontSize: value.fontSize,
       fontSizeUnit: value.fontSizeUnit,
@@ -752,6 +787,7 @@ export class EditorCore {
       next.align === prev.align &&
       next.formatBlock === prev.formatBlock &&
       next.link === prev.link &&
+      next.inTable === prev.inTable &&
       next.fontName === prev.fontName &&
       next.fontSize === prev.fontSize &&
       next.fontSizeUnit === prev.fontSizeUnit &&

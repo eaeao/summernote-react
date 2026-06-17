@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { EditorCore, EditorState, Lang, defaultOptions } from '@summernote/core';
+import type { EditorCore, EditorState, Lang, defaultOptions } from '@eaeao4jerry/summernote-core';
 
 export type ChromeOptions = typeof defaultOptions;
 

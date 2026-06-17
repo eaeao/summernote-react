@@ -8,8 +8,8 @@ const fromRoot = (p: string): string => fileURLToPath(new URL(p, import.meta.url
 export default defineConfig({
   resolve: {
     alias: {
-      '@summernote/core': fromRoot('./packages/core/src/index.ts'),
-      '@summernote/react': fromRoot('./packages/react/src/index.ts'),
+      '@eaeao4jerry/summernote-core': fromRoot('./packages/core/src/index.ts'),
+      '@eaeao4jerry/summernote-react': fromRoot('./packages/react/src/index.ts'),
     },
   },
   test: {

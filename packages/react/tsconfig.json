@@ -5,7 +5,7 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@summernote/core": ["../core/src/index.ts"]
+      "@eaeao4jerry/summernote-core": ["../core/src/index.ts"]
     }
   },
   "include": ["src"]

@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
-import { locales, localeCodes } from '@summernote/core';
+import { locales, localeCodes } from '@eaeao4jerry/summernote-core';
 import { SummernoteEditor } from '../src/SummernoteEditor';
 
 afterEach(() => {

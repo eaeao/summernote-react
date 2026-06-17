@@ -1,7 +1,7 @@
 {
-  "name": "@summernote/react",
-  "version": "0.0.0",
-  "description": "React bindings for @summernote/core (controlled <SummernoteEditor> + useSummernote hook)",
+  "name": "@eaeao4jerry/summernote-react",
+  "version": "1.0.0",
+  "description": "React bindings for @eaeao4jerry/summernote-core (controlled <SummernoteEditor> + useSummernote hook)",
   "license": "MIT",
   "type": "module",
   "sideEffects": [
@@ -35,6 +35,6 @@
     "react-dom": ">=18"
   },
   "dependencies": {
-    "@summernote/core": "*"
+    "@eaeao4jerry/summernote-core": "^1.0.0"
   }
 }

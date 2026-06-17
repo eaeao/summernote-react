@@ -1,7 +1,7 @@
 /**
- * @summernote/core — headless, framework-agnostic editor engine.
+ * @eaeao4jerry/summernote-core — headless, framework-agnostic editor engine.
  */
-export const CORE_VERSION = '0.0.0';
+export const CORE_VERSION = '1.0.0';
 
 export { EditorCore, createEditorCore } from './EditorCore';
 export type { EditorState, EditorCoreOptions, EditorAlign } from './EditorCore';

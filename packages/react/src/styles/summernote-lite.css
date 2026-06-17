@@ -4,7 +4,7 @@
  * Ported from the legacy lite SCSS (layout/visibility essentials). The icon GLYPHS require the
  * shared note-icon-* webfont (built from src/font/icons via scripts/build-fonts.js) which a
  * consumer loads separately; dropdowns degrade to text without it. The full pixel-faithful SCSS +
- * the 4-theme visual gate are Phase 4. Import this once: `import '@summernote/react/styles.css'`.
+ * the 4-theme visual gate are Phase 4. Import this once: `import '@eaeao4jerry/summernote-react/styles.css'`.
  */
 
 .note-editor {

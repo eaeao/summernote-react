@@ -1,7 +1,7 @@
 /**
- * CI gate: shipped @summernote/* editor packages must declare ZERO third-party runtime
+ * CI gate: shipped @eaeao4jerry/summernote-* editor packages must declare ZERO third-party runtime
  * dependencies (the port's "no external editor/runtime deps" invariant). Internal
- * workspace deps (@summernote/*) are allowed; react/react-dom live in peerDependencies.
+ * workspace deps (@eaeao4jerry/summernote-*) are allowed; react/react-dom live in peerDependencies.
  */
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -15,7 +15,7 @@ for (const name of readdirSync(PKGS_DIR)) {
   const pkg = JSON.parse(readFileSync(manifest, 'utf8'));
   const deps = pkg.dependencies ?? {};
   for (const dep of Object.keys(deps)) {
-    if (dep.startsWith('@summernote/')) continue; // internal workspace dependency
+    if (dep.startsWith('@eaeao4jerry/summernote-')) continue; // internal workspace dependency
     errors.push(`  ${pkg.name}: third-party runtime dependency "${dep}"`);
   }
 }

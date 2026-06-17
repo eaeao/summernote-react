@@ -1,6 +1,6 @@
 {
-  "name": "@summernote/core",
-  "version": "0.0.0",
+  "name": "@eaeao4jerry/summernote-core",
+  "version": "1.0.0",
   "description": "Headless, framework-agnostic editor engine ported from summernote (zero runtime deps)",
   "license": "MIT",
   "type": "module",

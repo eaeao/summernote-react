@@ -19,7 +19,7 @@ import {
   type EditorCoreOptions,
   type LangPartial,
   type ToolbarGroup,
-} from '@summernote/core';
+} from '@eaeao4jerry/summernote-core';
 import { useSummernote } from './useSummernote';
 import { Toolbar } from './toolbar/Toolbar';
 import { ChromeProvider, type ChromeValue, type ChromeUI } from './chrome/ChromeContext';

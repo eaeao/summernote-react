@@ -11,7 +11,7 @@ import {
   type EditorCore,
   type EditorCoreOptions,
   type EditorState,
-} from '@summernote/core';
+} from '@eaeao4jerry/summernote-core';
 
 const INERT_STATE: EditorState = {
   bold: false,

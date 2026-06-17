@@ -1,4 +1,4 @@
-import type { ToolbarGroup } from '@summernote/core';
+import type { ToolbarGroup } from '@eaeao4jerry/summernote-core';
 import { Popover } from './Popover';
 import { ToolbarItem, isKnownItem } from '../toolbar/registry';
 

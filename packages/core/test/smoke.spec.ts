@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { CORE_VERSION } from '@summernote/core';
+import { CORE_VERSION } from '@eaeao4jerry/summernote-core';
 
-describe('@summernote/core smoke (multi-engine)', () => {
+describe('@eaeao4jerry/summernote-core smoke (multi-engine)', () => {
   it('resolves the workspace package via the src alias', () => {
-    expect(CORE_VERSION).toBe('0.0.0');
+    expect(CORE_VERSION).toMatch(/^\d+\.\d+\.\d+/); // resolves + exposes a semver
   });
 
   it('runs in a real browser DOM with contentEditable support', () => {

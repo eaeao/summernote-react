@@ -7,7 +7,7 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   treeshake: true,
-  external: ['react', 'react-dom', '@summernote/core'],
+  external: ['react', 'react-dom', '@eaeao4jerry/summernote-core'],
   outExtension({ format }) {
     return { js: format === 'cjs' ? '.cjs' : '.js' };
   },

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { env } from '@summernote/core';
+import { env } from '@eaeao4jerry/summernote-core';
 import { useChrome } from './ChromeContext';
 import { Modal } from './Modal';
 

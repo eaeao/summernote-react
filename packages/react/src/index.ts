@@ -1,7 +1,7 @@
 /**
- * @summernote/react — React bindings for @summernote/core.
+ * @eaeao4jerry/summernote-react — React bindings for @eaeao4jerry/summernote-core.
  */
-export const REACT_BINDINGS_VERSION = '0.0.0';
+export const REACT_BINDINGS_VERSION = '1.0.0';
 
 export { SummernoteEditor } from './SummernoteEditor';
 export type { SummernoteEditorProps, SummernoteEditorHandle } from './SummernoteEditor';

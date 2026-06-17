@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { EditorState, Lang, Icons } from '@summernote/core';
+import type { EditorState, Lang, Icons } from '@eaeao4jerry/summernote-core';
 import { useChrome, useCommand, type ChromeUI } from '../chrome/ChromeContext';
 import {
   StyleDropdown,

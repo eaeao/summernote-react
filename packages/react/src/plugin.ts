@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import type { EditorCore } from '@summernote/core';
+import type { EditorCore } from '@eaeao4jerry/summernote-core';
 
 /**
  * A summernote-react plugin. Plugins register per-instance commands on the EditorCore and/or

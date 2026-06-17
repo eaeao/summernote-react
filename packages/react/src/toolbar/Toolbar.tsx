@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { ToolbarGroup } from '@summernote/core';
+import type { ToolbarGroup } from '@eaeao4jerry/summernote-core';
 import { useChrome } from '../chrome/ChromeContext';
 import { ToolbarItem, isKnownItem } from './registry';
 

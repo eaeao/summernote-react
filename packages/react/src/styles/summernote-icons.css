@@ -2,7 +2,7 @@
  * summernote icon font — the shared note-icon-* glyphs (pre-built webfont copied from the legacy
  * src/font; @font-face + glyph map extracted from src/styles/summernote/font.scss by
  * scripts/gen-icon-css.mjs). Import once alongside the theme CSS:
- *   import '@summernote/react/icons.css';
+ *   import '@eaeao4jerry/summernote-react/icons.css';
  * Every theme shares this font.
  */
 @font-face {

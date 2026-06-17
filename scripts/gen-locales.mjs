@@ -95,7 +95,7 @@ ${importLines}
 
 /**
  * All bundled locales as deep-partial overrides of en-US. Import this for the full set, or import a
- * single module directly for tree-shaking, e.g. \`import koKR from '@summernote/core/lang/locales/ko-KR'\`.
+ * single module directly for tree-shaking, e.g. \`import koKR from '@eaeao4jerry/summernote-core/lang/locales/ko-KR'\`.
  */
 export const locales: Record<string, LangPartial> = {
 ${mapLines}

@@ -1,7 +1,7 @@
 /**
  * summernote-react — the React + TS summernote port (engine + React bindings in one package).
  */
-export const VERSION = '1.0.0';
+export const VERSION = '1.0.1';
 
 // the headless engine API is part of this single package
 export * from './engine';

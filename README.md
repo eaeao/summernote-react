@@ -79,7 +79,7 @@ import '@eaeao/summernote-react/icons.css';
 import '@eaeao/summernote-react/themes/bs5.css';
 import { locales } from '@eaeao/summernote-react';
 
-<SummernoteEditor theme="bs5" lang={locales['ja-JP']} />;
+<SummernoteEditor theme="bs5" lang={locales['ko-KR']} />;
 ```
 
 ## Plugins

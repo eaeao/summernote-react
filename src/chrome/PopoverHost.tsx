@@ -12,13 +12,18 @@ interface Pos {
   left: number;
 }
 
+// gap between a popover and its target. The popover renders ABOVE the target (.note-popover has
+// transform: translateY(-100%)), so we anchor at the target's TOP minus this gap — the popover's
+// bottom then lands just above the target and never covers the caret/cell.
+const POPOVER_GAP = 5;
+
 function posWithin(el: HTMLElement, area: HTMLElement | null): Pos {
   if (!area) {
     return { top: 0, left: 0 };
   }
   const r = el.getBoundingClientRect();
   const a = area.getBoundingClientRect();
-  return { top: r.top - a.top + el.offsetHeight, left: r.left - a.left };
+  return { top: r.top - a.top - POPOVER_GAP, left: r.left - a.left };
 }
 
 function closestEl(selector: string): HTMLElement | null {

@@ -15,6 +15,7 @@
  */
 import dom from './core/dom';
 import wrappedRange from './core/range';
+import env from './core/env';
 import { History } from './editing/History';
 import { Style } from './editing/Style';
 import { Bullet } from './editing/Bullet';
@@ -196,6 +197,42 @@ function applyBlockStyle(styleInfo: Record<string, string>): boolean {
   return true;
 }
 
+/**
+ * Apply an inline CSS property to the selected text runs via Style.styleNodes (the own-command
+ * path for font-family/font-size/color/background-color — port of Editor.fontStyling). For a
+ * COLLAPSED caret it seeds a ZERO_WIDTH bogus char in the empty span and re-selects it: the
+ * §13.1 WebKit guard against caret ejection out of an empty styled span (without it, Safari
+ * types the next character OUTSIDE the span). Otherwise re-selects across the styled spans so
+ * active-state + chained ops see the run.
+ */
+function applyInlineStyle(cssProp: string, value: string): boolean {
+  const rng = wrappedRange.create();
+  if (!rng) {
+    return false;
+  }
+  const spans = style.styleNodes(rng) as HTMLElement[];
+  for (const span of spans) {
+    span.style.setProperty(cssProp, value);
+  }
+  const first = spans[0];
+  const last = spans[spans.length - 1];
+  if (rng.isCollapsed()) {
+    if (first && !first.firstChild) {
+      first.innerHTML = dom.ZERO_WIDTH_NBSP_CHAR;
+      const r = document.createRange();
+      r.selectNodeContents(first);
+      r.collapse(false);
+      selectRange(r);
+    }
+  } else if (first && last) {
+    const r = document.createRange();
+    r.setStart(first, 0);
+    r.setEnd(last, last.childNodes.length);
+    selectRange(r);
+  }
+  return spans.length > 0;
+}
+
 function unwrapEl(el: HTMLElement): void {
   const parent = el.parentNode;
   if (!parent) {
@@ -371,6 +408,86 @@ const COMMANDS: Record<string, Command> = {
   deleteRow: (): boolean => tableCmd((rng) => table.deleteRow(rng)),
   deleteCol: (): boolean => tableCmd((rng) => table.deleteCol(rng)),
   deleteTable: (): boolean => tableCmd((rng) => table.deleteTable(rng)),
+
+  // --- font / size / color / line-height (own inline-style commands, NO execCommand) ---
+  fontName: (_core, ...args): boolean => applyInlineStyle('font-family', env.validFontName(String(args[0] ?? ''))),
+  fontSize: (core, ...args): boolean => {
+    const value = String(args[0] ?? '');
+    if (value === '') {
+      return false;
+    }
+    const unit = core.getSnapshot().fontSizeUnit || 'px';
+    return applyInlineStyle('font-size', value + unit);
+  },
+  fontSizeUnit: (core, ...args): boolean => {
+    const size = core.getSnapshot().fontSize;
+    if (size === '') {
+      return false;
+    }
+    return applyInlineStyle('font-size', size + String(args[0] ?? 'px'));
+  },
+  foreColor: (_core, ...args): boolean => applyInlineStyle('color', String(args[0] ?? '')),
+  backColor: (_core, ...args): boolean => applyInlineStyle('background-color', String(args[0] ?? '')),
+  color: (_core, ...args): boolean => {
+    const info = (args[0] ?? {}) as { foreColor?: string; backColor?: string };
+    let ok = false;
+    if (info.foreColor) {
+      ok = applyInlineStyle('color', info.foreColor) || ok;
+    }
+    if (info.backColor) {
+      ok = applyInlineStyle('background-color', info.backColor) || ok;
+    }
+    return ok;
+  },
+  lineHeight: (_core, ...args): boolean => applyBlockStyle({ 'line-height': String(args[0] ?? '') }),
+
+  // --- block style (generic formatBlock for the style dropdown: p/blockquote/pre/h1..h6) ---
+  formatBlock: (_core, ...args): boolean => formatBlock(String(args[0] ?? 'p')),
+
+  // --- list indent / outdent (own surgery via the ported Bullet engine) ---
+  indent: (core): boolean => {
+    bullet.indent(core.editable);
+    return true;
+  },
+  outdent: (core): boolean => {
+    bullet.outdent(core.editable);
+    return true;
+  },
+
+  // --- image (synchronous insert; the dialog converts file -> dataURL then calls this) ---
+  insertImage: (_core, ...args): boolean => {
+    const src = String(args[0] ?? '');
+    if (src === '') {
+      return false;
+    }
+    const rng = wrappedRange.create();
+    if (!rng) {
+      return false;
+    }
+    const img = dom.create('IMG') as HTMLImageElement;
+    img.setAttribute('src', src);
+    if (args[1] !== undefined && String(args[1]) !== '') {
+      img.setAttribute('data-filename', String(args[1]));
+    }
+    rng.insertNode(img);
+    wrappedRange.createFromNodeAfter(img).select();
+    return true;
+  },
+
+  // --- arbitrary node insert (videos, custom embeds — the dialog builds the node) ---
+  insertNode: (_core, ...args): boolean => {
+    const node = args[0] as Node | undefined;
+    if (!node) {
+      return false;
+    }
+    const rng = wrappedRange.create();
+    if (!rng) {
+      return false;
+    }
+    rng.insertNode(node);
+    wrappedRange.createFromNodeAfter(node).select();
+    return true;
+  },
 
   undo(core): boolean {
     return core.undo();

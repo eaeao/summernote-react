@@ -19,6 +19,13 @@ const BLOCK_METHODS = new Set([
   'justifyFull',
   'insertOrderedList',
   'insertUnorderedList',
+  'formatPara',
+  'formatH1',
+  'formatH2',
+  'formatH3',
+  'formatH4',
+  'formatH5',
+  'formatH6',
 ]);
 
 const INLINE_METHODS = new Set([
@@ -57,7 +64,7 @@ describe('golden parity (multi-engine, own-commands vs legacy oracle)', () => {
   const inlineCases = golden.records.filter((r) => r.action !== null && r.select === 'all' && INLINE_METHODS.has(method(r as { action: { method: string } })));
 
   it('covers the recorded block + inline commands', () => {
-    expect(blockCases.length).toBeGreaterThanOrEqual(3); // justifyRight, ol, ul
+    expect(blockCases.length).toBeGreaterThanOrEqual(5); // justifyRight, ol, ul, formatH1, formatPara
     expect(inlineCases.length).toBeGreaterThanOrEqual(7); // b/i/u/strike/sup/sub/removeFormat
   });
 

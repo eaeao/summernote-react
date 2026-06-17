@@ -129,6 +129,21 @@ function clearFormat(): boolean {
   return true;
 }
 
+/** replace the block element(s) in the selection with `tag` (own formatBlock; no execCommand). */
+function formatBlock(tag: string): boolean {
+  const rng = wrappedRange.create();
+  if (!rng) {
+    return false;
+  }
+  const paras = rng.nodes(dom.isPara, { includeAncestor: true });
+  for (const para of paras) {
+    if (para.nodeName.toLowerCase() !== tag.toLowerCase()) {
+      dom.replace(para, tag);
+    }
+  }
+  return true;
+}
+
 const COMMANDS: Record<string, Command> = {
   insertText(core, ...args): boolean {
     const text = String(args[0] ?? '');
@@ -167,6 +182,13 @@ const COMMANDS: Record<string, Command> = {
     bullet.insertUnorderedList(core.editable);
     return true;
   },
+  formatPara: (): boolean => formatBlock('p'),
+  formatH1: (): boolean => formatBlock('h1'),
+  formatH2: (): boolean => formatBlock('h2'),
+  formatH3: (): boolean => formatBlock('h3'),
+  formatH4: (): boolean => formatBlock('h4'),
+  formatH5: (): boolean => formatBlock('h5'),
+  formatH6: (): boolean => formatBlock('h6'),
 
   undo(core): boolean {
     return core.undo();
@@ -191,6 +213,7 @@ export class EditorCore {
   constructor(editable: HTMLElement, options: EditorCoreOptions = {}) {
     this.editable = editable;
     this.options = options;
+    editable.classList.add('note-editable'); // so dom.isEditable() recognizes it (gates isPara, etc.)
     editable.setAttribute('contenteditable', 'true');
     const seed = options.value && options.value.trim() !== '' ? options.value : EMPTY_PARA;
     editable.innerHTML = seed;

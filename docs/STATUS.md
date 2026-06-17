@@ -5,8 +5,8 @@
 
 ## 한눈에
 
-- **구조: 단일 패키지 `@eaeao4jerry/summernote-react`** (엔진+React 한 패키지, `src/engine`은 `@engine` alias로 번들 포함). 모노레포 해체. main 미푸시.
-- 설치: `npm i @eaeao4jerry/summernote-react` (단일). `npm publish` 한 번.
+- **구조: 단일 패키지 `@eaeao/summernote-react`** (엔진+React 한 패키지, `src/engine`은 `@engine` alias로 번들 포함). 모노레포 해체. main 미푸시.
+- 설치: `npm i @eaeao/summernote-react` (단일). `npm publish` 한 번.
 - **🎉 Phase 3 + Phase 4 + Phase 5 완료 (v1.0 범위, 디바이스랩 게이트 제외).** 33 spec 파일, typecheck strict 클린, **core·react 둘 다 tsup 빌드 성공(ESM+CJS+.d.ts)**, `npm pack` 검증.
 - **Phase 5**: ①인라인토글 부분/중첩/혼합 선택 하드닝(양엔진) ②**아이콘 webfont**(note-icon-* 글리프 렌더, 전 테마) ③교차테마 computed-style 시각게이트 ④패키징(exports/sideEffects/pack dry-run).
 - ⚠️ **테스트 실행 정책(2026-06-18 변경)**: chromium+webkit 동시 실행이 PC를 멈춰서, **개발 중엔 chromium 단일 + 단일 spec + 실행후 프로세스 정리**. webkit/풀스위트는 마일스톤에만 1회. (vitest 게이트 설정 자체는 양엔진 유지.)
@@ -19,25 +19,24 @@
 ## 실행법
 
 ```bash
-yarn install                              # Yarn v1 workspaces
-yarn workspace @summernote/core typecheck # + @summernote/react typecheck
-yarn lint:no-jquery && yarn check:deps    # jQuery-ban + zero-dep 게이트
-node_modules/.bin/vitest run              # 전체 테스트 (chromium + webkit)
-node scripts/extract-golden.mjs           # 골든 코퍼스 재기록 (레거시 빌드 필요)
+yarn install
+yarn verify                                       # jQuery-ban + zero-dep 게이트 + typecheck
+yarn build                                        # 단일 dist (ESM+CJS+dts, 엔진 번들 포함)
+node_modules/.bin/vitest run <spec> --project=chromium   # 개발 중 권장(단일 엔진) + 실행 후 프로세스 정리
+yarn test                                         # 전체 (chromium+webkit) — ⚠️ 무겁다, CI에 위임
 ```
 
-> ⚠️ 전체 `vitest run`이 하네스에서 자동 백그라운드 전환되며 출력이 비는 글리치가 있음 — 그 경우 `TaskStop` 후 포그라운드 재실행(warm 캐시라 빠름).
+> ⚠️ chromium+webkit 동시 실행이 PC를 멈춤(브라우저 프로세스 누적). 개발 중엔 chromium 단일 spec + 실행 후 정리. 풀 스위트는 CI(port-ci.yml)가 push마다 양엔진으로.
 
-## 구조
+## 구조 (단일 패키지)
 
 ```
-packages/core   @summernote/core — 헤드리스 엔진, 런타임 의존 0 (tsup ESM+CJS+dts)
-  src/core/     func lists env key dom range            (1:1 이식, jQuery-free)
-  src/editing/  Style Typing Bullet Table History       (1:1 이식)
-  src/EditorCore.ts  자체 명령 레지스트리 + IME 상태머신 + EditorState
-packages/react  @summernote/react — useSummernote() + <SummernoteEditor> (react peer)
-test/           jQuery-free 하네스(util/setup/매처) + 골든 oracle(commands.json) + freeze-guard
-scripts/        check-no-jquery · check-no-runtime-deps · extract-golden
+src/index.ts        @eaeao/summernote-react 배럴 — React API + export * from './engine'
+src/SummernoteEditor.tsx useSummernote.ts plugin.ts plugins/ toolbar/ chrome/ styles/
+src/engine/         헤드리스 엔진(구 core) — chrome은 @engine alias로 import, tsup이 dist에 번들
+  EditorCore.ts options.ts  core/(dom·range·func·lists·env·key)  editing/(Style·Typing·Bullet·Table·History)  lang/(en-US+46locales)  media/  security/purify
+test/               평탄화 *.spec.{ts,tsx} + setup·util·golden (vitest browser, @engine alias)
+scripts/            check-no-jquery · check-no-runtime-deps (src/ + 루트 manifest 스캔)
 .github/workflows/port-ci.yml  install → gates → typecheck → playwright chromium+webkit → vitest
 ```
 

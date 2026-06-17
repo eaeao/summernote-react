@@ -1,7 +1,7 @@
 # Changesets
 
 This folder configures [changesets](https://github.com/changesets/changesets) for release
-management of `@eaeao4jerry/summernote-core` and `@eaeao4jerry/summernote-react` (kept in lockstep
+management of `@eaeao/summernote-core` and `@eaeao/summernote-react` (kept in lockstep
 via `fixed`).
 
 The CLI is declared in the root `devDependencies` — run `yarn install` once, then:

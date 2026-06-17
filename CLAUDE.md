@@ -37,7 +37,7 @@
 | `yarn lint:no-jquery` / `yarn check:deps` | CI 게이트 단독 실행 |
 | `yarn changeset` / `version-packages` / `release` | changesets 릴리스 플로우 |
 
-## 디렉토리 구조 (v1.0 — 단일 패키지 `@eaeao4jerry/summernote-react`)
+## 디렉토리 구조 (v1.0 — 단일 패키지 `@eaeao/summernote-react`)
 
 ```
 src/

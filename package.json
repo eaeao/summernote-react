@@ -1,5 +1,5 @@
 {
-  "name": "@eaeao4jerry/summernote-react",
+  "name": "@eaeao/summernote-react",
   "version": "1.0.0",
   "description": "React + TypeScript port of summernote — editor engine + React bindings in one package (zero runtime deps, no jQuery, no execCommand)",
   "license": "MIT",

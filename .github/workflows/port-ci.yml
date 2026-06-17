@@ -1,6 +1,6 @@
 name: port-ci
 
-# CI for @eaeao4jerry/summernote-react (single package).
+# CI for @eaeao/summernote-react (single package).
 # Multi-engine gate: the suite must pass on BOTH Chromium and WebKit.
 on:
   push:

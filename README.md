@@ -1,11 +1,11 @@
-# @eaeao4jerry/summernote-react
+# @eaeao/summernote-react
 
 A **React + TypeScript** port of the [summernote](https://summernote.org) WYSIWYG editor — the
 editor engine and the React bindings in **one package**, with **zero runtime dependencies**, **no
 jQuery**, and **no `document.execCommand`**. Verified on Chromium + WebKit (Safari engine).
 
 ```bash
-npm install @eaeao4jerry/summernote-react
+npm install @eaeao/summernote-react
 ```
 
 `react` / `react-dom` (>=18) are peer dependencies. The headless engine is bundled in — no second
@@ -14,9 +14,9 @@ package to install.
 ## Quick start
 
 ```tsx
-import { SummernoteEditor } from '@eaeao4jerry/summernote-react';
-import '@eaeao4jerry/summernote-react/styles.css';
-import '@eaeao4jerry/summernote-react/icons.css';
+import { SummernoteEditor } from '@eaeao/summernote-react';
+import '@eaeao/summernote-react/styles.css';
+import '@eaeao/summernote-react/icons.css';
 
 function App() {
   const [html, setHtml] = useState('<p>Hello</p>');
@@ -28,7 +28,7 @@ Uncontrolled + imperative ref:
 
 ```tsx
 import { useRef } from 'react';
-import { SummernoteEditor, type SummernoteEditorHandle } from '@eaeao4jerry/summernote-react';
+import { SummernoteEditor, type SummernoteEditorHandle } from '@eaeao/summernote-react';
 
 const ref = useRef<SummernoteEditorHandle>(null);
 <SummernoteEditor ref={ref} defaultValue="<p>Start…</p>" onChange={save} />;
@@ -38,7 +38,7 @@ const ref = useRef<SummernoteEditorHandle>(null);
 Headless hook (render your own chrome), or drive the engine directly:
 
 ```tsx
-import { useSummernote, createEditorCore } from '@eaeao4jerry/summernote-react';
+import { useSummernote, createEditorCore } from '@eaeao/summernote-react';
 // useSummernote({ value, onChange }) -> { editableRef, core, state }
 // createEditorCore(el, opts) -> the framework-agnostic engine (commands + EditorState)
 ```
@@ -68,10 +68,10 @@ import { useSummernote, createEditorCore } from '@eaeao4jerry/summernote-react';
 ## Themes & i18n
 
 ```tsx
-import '@eaeao4jerry/summernote-react/styles.css';
-import '@eaeao4jerry/summernote-react/icons.css';
-import '@eaeao4jerry/summernote-react/themes/bs5.css';
-import { locales } from '@eaeao4jerry/summernote-react';
+import '@eaeao/summernote-react/styles.css';
+import '@eaeao/summernote-react/icons.css';
+import '@eaeao/summernote-react/themes/bs5.css';
+import { locales } from '@eaeao/summernote-react';
 
 <SummernoteEditor theme="bs5" lang={locales['ja-JP']} />;
 ```
@@ -79,7 +79,7 @@ import { locales } from '@eaeao4jerry/summernote-react';
 ## Plugins
 
 ```tsx
-import { definePlugin, SummernoteEditor } from '@eaeao4jerry/summernote-react';
+import { definePlugin, SummernoteEditor } from '@eaeao/summernote-react';
 
 const myPlugin = definePlugin({
   name: 'shout',

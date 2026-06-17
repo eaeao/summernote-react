@@ -106,6 +106,15 @@ Reference plugins ship in the box: `helloPlugin`, `specialcharsPlugin`, `databas
 - **Security** — code-view HTML is purified (script/style/object/embed/non-whitelisted iframes
   stripped); link hrefs reject `javascript:` / `data:` schemes.
 
+## Demo
+
+A live demo (themes, 46 locales, air mode, a custom plugin, controlled HTML, the imperative ref,
+two editors coexisting) lives in [`demo/`](demo) and runs the editor straight from source:
+
+```bash
+cd demo && yarn install && yarn dev      # http://localhost:5173
+```
+
 ## Development
 
 ```bash

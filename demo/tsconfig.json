@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@eaeao/summernote-react": ["../src/index.ts"],
+      "@engine": ["../src/engine/index.ts"]
+    }
+  },
+  "include": ["src", "vite.config.ts"]
+}

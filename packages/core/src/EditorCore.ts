@@ -639,6 +639,7 @@ export class EditorCore {
   private readonly listeners = new Set<Listener>();
   private snapshot: EditorState;
   private lastRange: { sc: Node; so: number; ec: Node; eo: number } | null = null;
+  private readonly customCommands: Record<string, Command> = {};
   private readonly cleanups: Array<() => void> = [];
 
   constructor(editable: HTMLElement, options: EditorCoreOptions = {}) {
@@ -659,8 +660,13 @@ export class EditorCore {
     return this.editable.contains(range.startContainer);
   }
 
+  /** register a per-instance command (plugins); shadows nothing built-in unless names collide. */
+  registerCommand(name: string, fn: (core: EditorCore, ...args: unknown[]) => boolean): void {
+    this.customCommands[name] = fn;
+  }
+
   command(name: string, ...args: unknown[]): boolean {
-    const cmd = COMMANDS[name];
+    const cmd = this.customCommands[name] ?? COMMANDS[name];
     if (!cmd) {
       return false;
     }

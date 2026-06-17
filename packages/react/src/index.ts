@@ -4,9 +4,12 @@
 export const REACT_BINDINGS_VERSION = '0.0.0';
 
 export { SummernoteEditor } from './SummernoteEditor';
-export type { SummernoteEditorProps } from './SummernoteEditor';
+export type { SummernoteEditorProps, SummernoteEditorHandle } from './SummernoteEditor';
 export { useSummernote } from './useSummernote';
 export type { UseSummernoteResult } from './useSummernote';
+export { definePlugin } from './plugin';
+export type { SummernotePlugin } from './plugin';
+export { helloPlugin } from './plugins/hello';
 
 export { Toolbar } from './toolbar/Toolbar';
 export type { ToolbarProps } from './toolbar/Toolbar';

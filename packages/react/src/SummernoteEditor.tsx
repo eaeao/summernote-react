@@ -1,5 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { defaultOptions, langEnUS, type EditorCoreOptions, type ToolbarGroup } from '@summernote/core';
+import {
+  createElement,
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+  type FC,
+  type ReactNode,
+} from 'react';
+import { defaultOptions, langEnUS, type EditorCore, type EditorCoreOptions, type ToolbarGroup } from '@summernote/core';
 import { useSummernote } from './useSummernote';
 import { Toolbar } from './toolbar/Toolbar';
 import { ChromeProvider, type ChromeValue, type ChromeUI } from './chrome/ChromeContext';
@@ -8,8 +19,20 @@ import { Codeview } from './chrome/Codeview';
 import { Statusbar } from './chrome/Statusbar';
 import { Placeholder } from './chrome/Placeholder';
 import { PopoverHost } from './chrome/PopoverHost';
+import type { SummernotePlugin } from './plugin';
 
 type DialogKind = 'link' | 'image' | 'video' | 'help' | null;
+
+/** imperative API exposed via a ref on <SummernoteEditor>. */
+export interface SummernoteEditorHandle {
+  focus(): void;
+  getCode(): string;
+  setCode(html: string): void;
+  command(name: string, ...args: unknown[]): boolean;
+  undo(): void;
+  redo(): void;
+  readonly core: EditorCore | null;
+}
 
 const EMPTY_RE = /^(<p>(<br\s*\/?>)?<\/p>|<br\s*\/?>)?\s*$/i;
 function isEmptyHtml(html: string): boolean {
@@ -29,6 +52,8 @@ export interface SummernoteEditorProps {
   placeholder?: string;
   /** disable the resize statusbar. */
   disableResize?: boolean;
+  /** plugins: per-instance commands + custom toolbar buttons. */
+  plugins?: readonly SummernotePlugin[];
   className?: string;
 }
 
@@ -39,8 +64,9 @@ export interface SummernoteEditorProps {
  * React-vs-contentEditable fix). All chrome reads the published EditorState + options/lang via
  * ChromeContext.
  */
-export function SummernoteEditor(props: SummernoteEditorProps): JSX.Element {
-  const { value, defaultValue, onChange, options, toolbar, placeholder, disableResize, className } = props;
+export const SummernoteEditor = forwardRef<SummernoteEditorHandle, SummernoteEditorProps>(
+  function SummernoteEditor(props, ref): JSX.Element {
+  const { value, defaultValue, onChange, options, toolbar, placeholder, disableResize, plugins, className } = props;
   const lastEmitted = useRef<string | null>(null);
   const editingAreaRef = useRef<HTMLDivElement | null>(null);
   const initial = value ?? defaultValue;
@@ -61,6 +87,55 @@ export function SummernoteEditor(props: SummernoteEditorProps): JSX.Element {
   coreOptions.onShortcut = (method: string): boolean => shortcutRef.current(method);
 
   const { editableRef, core, state } = useSummernote(coreOptions);
+
+  // register plugin commands once the engine is live
+  useEffect(() => {
+    if (!core || !plugins) {
+      return;
+    }
+    for (const plugin of plugins) {
+      if (plugin.commands) {
+        for (const [name, fn] of Object.entries(plugin.commands)) {
+          core.registerCommand(name, fn);
+        }
+      }
+    }
+  }, [core, plugins]);
+
+  // custom toolbar buttons contributed by plugins (rendered via the toolbar's renderCustom slot)
+  const pluginButtons = useMemo<Record<string, FC>>(() => {
+    const map: Record<string, FC> = {};
+    for (const plugin of plugins ?? []) {
+      Object.assign(map, plugin.buttons);
+    }
+    return map;
+  }, [plugins]);
+  const renderCustom = useCallback(
+    (name: string): ReactNode => {
+      const Comp = pluginButtons[name];
+      return Comp ? createElement(Comp) : null;
+    },
+    [pluginButtons],
+  );
+
+  // imperative API via ref
+  useImperativeHandle(
+    ref,
+    (): SummernoteEditorHandle => ({
+      focus: () => core?.focus(),
+      getCode: () => core?.getHTML() ?? '',
+      setCode: (h: string) => core?.setHTML(h),
+      command: (name: string, ...args: unknown[]) => core?.command(name, ...args) ?? false,
+      undo: () => {
+        core?.command('undo');
+      },
+      redo: () => {
+        core?.command('redo');
+      },
+      core,
+    }),
+    [core],
+  );
 
   // Controlled: push an external value into the engine ONLY when it genuinely differs AND is not
   // an echo of our own onChange (lastEmitted guard) — prevents caret-destroying re-seeds.
@@ -136,7 +211,7 @@ export function SummernoteEditor(props: SummernoteEditorProps): JSX.Element {
   return (
     <ChromeProvider value={chrome}>
       <div className={rootClass}>
-        <Toolbar />
+        <Toolbar renderCustom={renderCustom} />
         <div className="note-editing-area" ref={editingAreaRef} style={{ position: 'relative' }}>
           {showPlaceholder ? <Placeholder text={placeholder} visible /> : null}
           <div
@@ -159,4 +234,5 @@ export function SummernoteEditor(props: SummernoteEditorProps): JSX.Element {
       </div>
     </ChromeProvider>
   );
-}
+  },
+);

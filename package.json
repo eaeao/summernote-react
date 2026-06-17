@@ -32,6 +32,7 @@
     "lint": "eslint src public/plugin public/lang test scripts",
     "test": "vitest run",
     "test:watch": "vitest",
+    "extract:golden": "node scripts/extract-golden.mjs",
     "lint:no-jquery": "node scripts/check-no-jquery.mjs",
     "check:deps": "node scripts/check-no-runtime-deps.mjs",
     "typecheck": "yarn workspace @summernote/core typecheck && yarn workspace @summernote/react typecheck",

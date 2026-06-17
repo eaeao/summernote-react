@@ -1,0 +1,186 @@
+{
+  "recordedBy": "scripts/extract-golden.mjs",
+  "source": "legacy summernote 0.9.1 (lite theme), execCommand-based engine",
+  "engine": "chromium",
+  "note": "IMMUTABLE parity oracle. Do NOT regenerate from the port. Inline-format markup is execCommand output (non-deterministic across engines) — the port re-baselines it to deterministic own-command markup; see docs/PORTING-PLAN.md §2.",
+  "records": [
+    {
+      "name": "roundtrip:paragraph",
+      "initialHTML": "<p>hello</p>",
+      "select": null,
+      "action": null,
+      "options": null,
+      "resultHTML": "<p>hello</p>"
+    },
+    {
+      "name": "roundtrip:nested-span",
+      "initialHTML": "<p>a<span style=\"font-size: 24px;\">b</span>c</p>",
+      "select": null,
+      "action": null,
+      "options": null,
+      "resultHTML": "<p>a<span style=\"font-size: 24px;\">b</span>c</p>"
+    },
+    {
+      "name": "roundtrip:bold-tag",
+      "initialHTML": "<p>a<b>b</b>c</p>",
+      "select": null,
+      "action": null,
+      "options": null,
+      "resultHTML": "<p>a<b>b</b>c</p>"
+    },
+    {
+      "name": "roundtrip:list",
+      "initialHTML": "<ul><li>a</li><li>b</li></ul>",
+      "select": null,
+      "action": null,
+      "options": null,
+      "resultHTML": "<ul><li>a</li><li>b</li></ul>"
+    },
+    {
+      "name": "roundtrip:table",
+      "initialHTML": "<table><tbody><tr><td>a</td><td>b</td></tr></tbody></table>",
+      "select": null,
+      "action": null,
+      "options": null,
+      "resultHTML": "<table><tbody><tr><td>a</td><td>b</td></tr></tbody></table>"
+    },
+    {
+      "name": "roundtrip:blockquote",
+      "initialHTML": "<blockquote>q</blockquote>",
+      "select": null,
+      "action": null,
+      "options": null,
+      "resultHTML": "<blockquote>q</blockquote>"
+    },
+    {
+      "name": "inline:bold",
+      "initialHTML": "<p>hello</p>",
+      "select": "all",
+      "action": {
+        "method": "editor.bold"
+      },
+      "options": null,
+      "resultHTML": "<p><b>hello</b></p>"
+    },
+    {
+      "name": "inline:italic",
+      "initialHTML": "<p>hello</p>",
+      "select": "all",
+      "action": {
+        "method": "editor.italic"
+      },
+      "options": null,
+      "resultHTML": "<p><i>hello</i></p>"
+    },
+    {
+      "name": "inline:underline",
+      "initialHTML": "<p>hello</p>",
+      "select": "all",
+      "action": {
+        "method": "editor.underline"
+      },
+      "options": null,
+      "resultHTML": "<p><u>hello</u></p>"
+    },
+    {
+      "name": "inline:strikethrough",
+      "initialHTML": "<p>hello</p>",
+      "select": "all",
+      "action": {
+        "method": "editor.strikethrough"
+      },
+      "options": null,
+      "resultHTML": "<p><strike>hello</strike></p>"
+    },
+    {
+      "name": "inline:superscript",
+      "initialHTML": "<p>hello</p>",
+      "select": "all",
+      "action": {
+        "method": "editor.superscript"
+      },
+      "options": null,
+      "resultHTML": "<p><sup>hello</sup></p>"
+    },
+    {
+      "name": "inline:subscript",
+      "initialHTML": "<p>hello</p>",
+      "select": "all",
+      "action": {
+        "method": "editor.subscript"
+      },
+      "options": null,
+      "resultHTML": "<p><sub>hello</sub></p>"
+    },
+    {
+      "name": "inline:removeFormat",
+      "initialHTML": "<p>hello</p>",
+      "select": "all",
+      "action": {
+        "method": "editor.removeFormat"
+      },
+      "options": null,
+      "resultHTML": "<p>hello</p>"
+    },
+    {
+      "name": "block:formatH1",
+      "initialHTML": "<p>hello</p>",
+      "select": "all",
+      "action": {
+        "method": "editor.formatH1"
+      },
+      "options": null,
+      "resultHTML": "<h1>hello</h1>"
+    },
+    {
+      "name": "block:formatPara",
+      "initialHTML": "<h1>hello</h1>",
+      "select": "all",
+      "action": {
+        "method": "editor.formatPara"
+      },
+      "options": null,
+      "resultHTML": "<p>hello</p>"
+    },
+    {
+      "name": "block:orderedList",
+      "initialHTML": "<p>hello</p>",
+      "select": "all",
+      "action": {
+        "method": "editor.insertOrderedList"
+      },
+      "options": null,
+      "resultHTML": "<ol><li>hello</li></ol>"
+    },
+    {
+      "name": "block:unorderedList",
+      "initialHTML": "<p>hello</p>",
+      "select": "all",
+      "action": {
+        "method": "editor.insertUnorderedList"
+      },
+      "options": null,
+      "resultHTML": "<ul><li>hello</li></ul>"
+    },
+    {
+      "name": "block:justifyRight",
+      "initialHTML": "<p>hello</p>",
+      "select": "all",
+      "action": {
+        "method": "editor.justifyRight"
+      },
+      "options": null,
+      "resultHTML": "<p style=\"text-align: right;\">hello</p>"
+    },
+    {
+      "name": "insert:horizontalRule",
+      "initialHTML": "<p>hello</p>",
+      "select": "all",
+      "action": {
+        "method": "editor.insertHorizontalRule"
+      },
+      "options": null,
+      "resultHTML": "<p><br></p><hr><p>hello</p>"
+    }
+  ]
+}

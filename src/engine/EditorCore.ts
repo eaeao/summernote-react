@@ -762,6 +762,10 @@ export class EditorCore {
   private readonly listeners = new Set<Listener>();
   private snapshot: EditorState;
   private lastRange: { sc: Node; so: number; ec: Node; eo: number } | null = null;
+  // last real (non-collapsed) in-editor selection + whether the last press landed in the editor —
+  // used to recover the selection when an extension popup grabs it on a toolbar press.
+  private lastGoodRange: { sc: Node; so: number; ec: Node; eo: number } | null = null;
+  private pointerInEditable = false;
   private readonly customCommands: Record<string, Command> = {};
   private readonly cleanups: Array<() => void> = [];
 
@@ -793,11 +797,26 @@ export class EditorCore {
     if (!cmd) {
       return false;
     }
-    // refuse to mutate the document when the live selection is outside this editor — except for
-    // selectionless / explicit-target commands (undo/redo, image ops that receive the target node).
+    // A usable selection is a non-collapsed range inside this editor. If it is gone — cleared, moved
+    // out, or collapsed to a caret by a browser extension popup (dictionary/translator) that armed
+    // on the selection and grabbed it on the toolbar mousedown — restore the last real selection.
+    // lastGoodRange is dropped when the user places a caret by clicking IN the editor, so a genuine
+    // collapsed caret (bold-then-type) is honoured rather than overwritten.
     if (!SELECTIONLESS_COMMANDS.has(name)) {
       const live = currentRange();
-      if (live && !this.ownsRange(live)) {
+      const usable = !!live && this.ownsRange(live) && !live.collapsed;
+      if (!usable && this.lastGoodRange) {
+        const r = document.createRange();
+        try {
+          r.setStart(this.lastGoodRange.sc, this.lastGoodRange.so);
+          r.setEnd(this.lastGoodRange.ec, this.lastGoodRange.eo);
+          selectRange(r);
+        } catch {
+          // stale range (DOM changed under it) — leave the live selection as-is
+        }
+      }
+      const after = currentRange();
+      if (!after || !this.ownsRange(after)) {
         return false;
       }
     }
@@ -1037,7 +1056,25 @@ export class EditorCore {
       this.afterCommand();
     };
     const onSelectionChange = (): void => {
+      // Track the last real (non-empty) in-editor selection, so a command can recover it if a browser
+      // extension popup (dictionary / translator) grabs the selection on the toolbar mousedown.
+      // Captured at selection time, so it is immune to whatever phase the extension's listener fires
+      // in. A collapsed caret the user placed by clicking IN the editor drops it, so a genuine
+      // bold-then-type caret is honoured rather than restored to a stale selection.
+      const r = currentRange();
+      if (r && this.ownsRange(r)) {
+        if (!r.collapsed) {
+          this.lastGoodRange = { sc: r.startContainer, so: r.startOffset, ec: r.endContainer, eo: r.endOffset };
+        } else if (this.pointerInEditable) {
+          this.lastGoodRange = null;
+        }
+      }
       this.notifyState();
+    };
+    const onPointerDown = (e: MouseEvent): void => {
+      // remember whether the press landed inside the editor — distinguishes a deliberate caret from
+      // an extension collapsing the selection on a toolbar press (capture phase, so it always runs).
+      this.pointerInEditable = this.editable.contains(e.target as Node);
     };
     const onKeyDown = (e: KeyboardEvent): void => this.handleShortcut(e);
 
@@ -1046,6 +1083,7 @@ export class EditorCore {
     this.editable.addEventListener('input', onInput);
     this.editable.addEventListener('keydown', onKeyDown);
     document.addEventListener('selectionchange', onSelectionChange);
+    document.addEventListener('mousedown', onPointerDown, true);
 
     this.cleanups.push(
       () => this.editable.removeEventListener('compositionstart', onCompositionStart),
@@ -1053,6 +1091,7 @@ export class EditorCore {
       () => this.editable.removeEventListener('input', onInput),
       () => this.editable.removeEventListener('keydown', onKeyDown),
       () => document.removeEventListener('selectionchange', onSelectionChange),
+      () => document.removeEventListener('mousedown', onPointerDown, true),
     );
   }
 

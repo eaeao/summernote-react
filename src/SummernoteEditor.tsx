@@ -269,11 +269,20 @@ export const SummernoteEditor = forwardRef<SummernoteEditorHandle, SummernoteEdi
           {showPlaceholder ? <Placeholder text={placeholder} visible /> : null}
           <div
             ref={editableRef}
-            className="note-editable"
+            className="note-editable notranslate"
             contentEditable={!codeview}
             suppressContentEditableWarning
             role="textbox"
             aria-multiline="true"
+            // Opt out of browser extensions that inject into / overlay the contentEditable and
+            // hijack the selection when a toolbar button is pressed — the engine owns this subtree.
+            // Google Translate (its #gtx-trans selection bubble) honours translate="no" / notranslate
+            // — which also stops page-translation from rewriting the editor content; Grammarly honours
+            // the data-gramm* flags.
+            translate="no"
+            data-gramm="false"
+            data-gramm_editor="false"
+            data-enable-grammarly="false"
             style={codeview ? { display: 'none' } : undefined}
           />
           {codeview ? <Codeview value={codeHtml} onChange={setCodeHtml} /> : null}

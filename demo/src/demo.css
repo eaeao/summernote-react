@@ -337,7 +337,7 @@ details.snippet[open] > summary::before {
   align-self: start;
   z-index: 50;
   width: 244px;
-  background: color-mix(in srgb, var(--card) 68%, transparent);
+  background: color-mix(in srgb, var(--card) 10%, transparent);
   -webkit-backdrop-filter: blur(18px) saturate(160%);
   backdrop-filter: blur(18px) saturate(160%);
   border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);

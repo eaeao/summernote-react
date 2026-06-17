@@ -48,6 +48,27 @@ describe('font / color / lineHeight / format commands (own inline-style, multi-e
     core.destroy();
   });
 
+  it('foreColor on a PARTIAL selection inside a <b> wraps only that substring', () => {
+    const el = mount('<div></div>');
+    const core = createEditorCore(el, { value: '<p>Hello <b>summernote-react</b></p>' });
+    const bText = (el.querySelector('b') as HTMLElement).firstChild as Text; // "summernote-react"
+    const r = document.createRange();
+    r.setStart(bText, 4); // start of "ernote-r"
+    r.setEnd(bText, 12); // end of "ernote-r"
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(r);
+
+    core.command('color', { foreColor: '#ff0000' });
+
+    expect((el.querySelector('b') as HTMLElement).textContent).toBe('summernote-react'); // text intact
+    const span = el.querySelector('b span') as HTMLElement;
+    expect(span).not.toBeNull();
+    expect(span.style.color).toBe('rgb(255, 0, 0)');
+    expect(span.textContent).toBe('ernote-r');
+    core.destroy();
+  });
+
   it('lineHeight sets the paragraph line-height', () => {
     const el = mount('<div></div>');
     const core = createEditorCore(el, { value: '<p>hello</p>' });

@@ -16,6 +16,7 @@
 import dom from './core/dom';
 import wrappedRange from './core/range';
 import env from './core/env';
+import { createVideoNode } from './media/video';
 import { History } from './editing/History';
 import { Style } from './editing/Style';
 import { Bullet } from './editing/Bullet';
@@ -474,7 +475,22 @@ const COMMANDS: Record<string, Command> = {
     return true;
   },
 
-  // --- arbitrary node insert (videos, custom embeds — the dialog builds the node) ---
+  // --- video (parse the provider URL into an embed node, then insert) ---
+  insertVideo: (_core, ...args): boolean => {
+    const node = createVideoNode(String(args[0] ?? ''));
+    if (!node) {
+      return false;
+    }
+    const rng = wrappedRange.create();
+    if (!rng) {
+      return false;
+    }
+    rng.insertNode(node);
+    wrappedRange.createFromNodeAfter(node).select();
+    return true;
+  },
+
+  // --- arbitrary node insert (custom embeds — the dialog builds the node) ---
   insertNode: (_core, ...args): boolean => {
     const node = args[0] as Node | undefined;
     if (!node) {
@@ -507,6 +523,7 @@ export class EditorCore {
   private settleTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly listeners = new Set<Listener>();
   private snapshot: EditorState;
+  private lastRange: { sc: Node; so: number; ec: Node; eo: number } | null = null;
   private readonly cleanups: Array<() => void> = [];
 
   constructor(editable: HTMLElement, options: EditorCoreOptions = {}) {
@@ -556,6 +573,65 @@ export class EditorCore {
 
   isComposing(): boolean {
     return this.composing;
+  }
+
+  // --- selection save/restore (dialogs move focus to inputs, losing the selection) ---
+  saveRange(): void {
+    const r = currentRange();
+    if (r && this.ownsRange(r)) {
+      this.lastRange = { sc: r.startContainer, so: r.startOffset, ec: r.endContainer, eo: r.endOffset };
+    }
+  }
+
+  restoreRange(): void {
+    if (!this.lastRange) {
+      return;
+    }
+    const r = document.createRange();
+    try {
+      r.setStart(this.lastRange.sc, this.lastRange.so);
+      r.setEnd(this.lastRange.ec, this.lastRange.eo);
+      selectRange(r);
+    } catch {
+      // stale range (DOM changed under it) — leave the live selection as-is
+    }
+  }
+
+  focus(): void {
+    this.editable.focus();
+  }
+
+  /** plain text of the saved (or live) selection — dialog prefill. */
+  getSelectedText(): string {
+    if (this.lastRange) {
+      const r = document.createRange();
+      try {
+        r.setStart(this.lastRange.sc, this.lastRange.so);
+        r.setEnd(this.lastRange.ec, this.lastRange.eo);
+        return r.toString();
+      } catch {
+        return '';
+      }
+    }
+    const live = currentRange();
+    return live && this.ownsRange(live) ? live.toString() : '';
+  }
+
+  /** anchor under the saved/live selection, or null — link-dialog prefill. */
+  getAnchorInfo(): { url: string; text: string; newWindow: boolean } | null {
+    const node = this.lastRange ? this.lastRange.sc : currentRange()?.startContainer;
+    if (!node) {
+      return null;
+    }
+    const anchor = dom.ancestor(node, dom.isAnchor) as HTMLAnchorElement | null;
+    if (!anchor) {
+      return null;
+    }
+    return {
+      url: anchor.getAttribute('href') ?? '',
+      text: anchor.textContent ?? '',
+      newWindow: anchor.getAttribute('target') === '_blank',
+    };
   }
 
   // --- subscription (useSyncExternalStore source) ---

@@ -15,3 +15,5 @@ export type { Lang } from './lang/en-US';
 export { default as env } from './core/env';
 export { detectEnv } from './core/env';
 export type { EnvFlags } from './core/env';
+
+export { createVideoNode } from './media/video';

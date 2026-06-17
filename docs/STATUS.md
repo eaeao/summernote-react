@@ -5,8 +5,8 @@
 
 ## 한눈에
 
-- 브랜치 `react-ts-port` (main에서 분기, **미푸시**) — 구현 커밋 19개.
-- **전체 446 테스트 green (chromium + webkit), typecheck strict 클린.**
+- 브랜치 `react-ts-port` (main에서 분기, **미푸시**) — 구현 커밋 20개.
+- **전체 456 테스트 green (chromium + webkit), typecheck strict 클린.**
 - **외부 editor/runtime 의존 0, jQuery 0, `document.execCommand` 0.**
 
 ## 실행법
@@ -44,6 +44,7 @@ scripts/        check-no-jquery · check-no-runtime-deps · extract-golden
 | **Phase 2a** 편집엔진 | Style/Typing/Bullet/Table/History 1:1 이식 (style/Table/Typing spec) |
 | **Phase 2b** 자체명령 | **execCommand 완전 제거.** insertText · 인라인토글6(`Style.styleNodes`) · removeFormat · justify(`stylePara`) · lists(`Bullet`) · formatBlock(`dom.replace`) · createLink · unlink · hr · **table(insertTable/addRow/addCol/deleteRow/deleteCol/deleteTable)** · undo/redo(faithful `History`) |
 | **Phase 3a** 상태발행 | `EditorState` 전체 active-state(인라인6·list·align·formatBlock·link·undo/redo·IME) **구조적 검출**(queryCommandState 미사용). `INLINE_TOGGLES` 단일출처 → 토글↔하이라이트 무드리프트 |
+| **Phase 3b**(진행) 툴바 | config 기반 `<Toolbar>` — `BUTTONS` 레지스트리(command+isActive/isDisabled가 EditorState 바인딩) + `DEFAULT_TOOLBAR`([group,keys], summernote shape) + `.note-toolbar/.note-btn-group/.note-btn/note-icon-*` 클래스 계약. 현재 명령 전부(인라인6+clear·ul/ol·justify4·undo/redo) 아이콘버튼 연결. `<SummernoteEditor toolbar=...>` prop |
 
 **골든 parity 게이트**(`golden-parity.spec`): 레거시가 execCommand로 만든 출력을 자체 명령 엔진이 **38 케이스 재현**(왕복+블록+인라인). 인라인은 결정적 마크업(strike→`<s>`) 재기준선. ⇒ "execCommand 없이 레거시 동등" 증명.
 
@@ -65,7 +66,7 @@ scripts/        check-no-jquery · check-no-runtime-deps · extract-golden
 
 **Phase 3 — React chrome → v0.5**
 1. ✅ `EditorState` 확장 완료(전체 active-state, 구조적 검출, `editor-state.spec`).
-2. 테마별 React chrome: `<Toolbar>` (config `[group,[buttons]]`) · button/dropdown/colorpalette/table-picker · 다이얼로그(link/image/video/help, Promise) · 팝오버(link/image/table/air, `coordsAtPos`) · statusbar/handle/fullscreen/placeholder. 명령은 `core.command(name,...)`로 연결.
+2. 테마별 React chrome: ✅ `<Toolbar>`(config `[group,[buttons]]`)+button 완료. **다음:** dropdown(style/fontname/fontsize) · colorpalette · table-picker · 다이얼로그(link/image/video/help, Promise) · 팝오버(link/image/table/air, `coordsAtPos`) · statusbar/handle/fullscreen/placeholder. 명령은 `core.command(name,...)`로 연결. *dropdown/color/font 붙일 때 EditorState에 값-기반 상태(fontName/fontSize/foreColor/backColor) 추가 필요(현재 boolean active-state만).*
 3. `.note-*` 클래스 계약 유지 + lite/bs3/bs4/bs5 ThemeSpec.
 4. 크로스브라우저(§13): Pointer Events 터치, visualViewport 키보드 dock, 모바일 air-popover 아래 배치.
 

@@ -1,230 +1,166 @@
 # Summernote → React + TypeScript 포팅 계획서
 
-> jQuery 기반 vanilla summernote(현 코드베이스, 루트 `CLAUDE.md` 참조)를 **문서 모델 기반 React + TypeScript 에디터**로 전면 재구축하는 체계적 계획. 13개 설계 에이전트(코어 아키텍처 3제안 + 심사 + 서브시스템 8 + 로드맵 종합)의 결과를 종합했다.
+> jQuery 기반 vanilla summernote(현 코드베이스, 루트 `CLAUDE.md` 참조)를 **외부 의존 0의 자체 엔진으로 React + TypeScript 화("react화")**하는 체계적 계획. summernote가 이미 원하는 동작을 잘 하므로 **엔진을 재발명하지 않고 보존·이식**한다. 13개 설계 에이전트(엔진-이식 3제안 + 심사 + 서브시스템 8 + 로드맵)의 종합.
 
-## 0. 확정된 제약 (사용자 결정, 2026-06-17)
+## 0. 확정 제약 (사용자 결정, 2026-06-17)
 
 | 축 | 결정 |
 |---|---|
-| 편집 코어 | contentEditable + `document.execCommand` 직접 수술 폐기 → **문서 모델 기반 재구축** |
-| jQuery | **완전 제거** (0 의존) |
+| 편집 코어 | **summernote 자체 엔진을 strict TS로 충실 이식**(contentEditable + 자체 `dom`/`range`/`editing` 로직). **외부 라이브러리 0** — ProseMirror/Lexical/Tiptap/Slate 일절 안 씀 |
+| 이식 방식 | **Lens C — 전면 TS 재구조화**(유지보수성). stringly `invoke()` → 타입드 command map + EventBus; `updateCurrentStyle` DOM-spray → 파생 `EditorState`를 `useSyncExternalStore`로 발행 |
+| execCommand | **v1에서 완전 제거** — 전부 자체 Range 기반 명령(자체 엔진 취지 최대) |
+| jQuery | **완전 제거** (네이티브 DOM/이벤트/Promise/spread) — 현재 유일한 런타임 의존 |
 | 언어 | **TypeScript strict** |
-| 공개 API | **프레임워크 비종속 헤드리스 코어 + `useSummernote()` 훅 + controlled `<SummernoteEditor>` 컴포넌트** |
+| 공개 API | 프레임워크 비종속 헤드리스 코어 + `useSummernote()` 훅 + controlled `<SummernoteEditor value onChange options theme>` |
+| React 경계 | React는 chrome만. editable contentEditable은 엔진이 imperative 소유(**uncontrolled ref, React children 0**) — React-vs-contentEditable 충돌 구조적 종결 |
 | v1 범위 | **완전 패리티** — 4테마(lite/bs3/bs4/bs5) + 22모듈 전 기능 + 플러그인 + i18n 50+ 로케일 |
 
-## 1. 핵심 아키텍처 결정 — ProseMirror 기반 엔진
+> 이전 ProseMirror 기반 초판은 **폐기**(외부 의존 사용 — 본 방향과 배치).
 
-### 1.1 수렴된 결론
+## 1. 핵심 아키텍처 — Lens C 타입드 코어 + 자체 명령 엔진
 
-3개 코어엔진 제안(ProseMirror / Lexical / from-scratch)을 독립 설계 후 심사한 결과:
+**구조**: `EditorCore`(헤드리스 TS) ↔ EventBus ↔ React chrome. 엔진은 검증된 알고리즘을 **1:1로 이식**(I/O만 타입드 재구조화)하고, `Editor.js`의 stringly `this[cmd]` + `Context.invoke('module.method')` 라우터를 **타입드 Command 레지스트리 + EventBus**로 교체. 툴바 상태는 `Buttons.updateCurrentStyle`의 DOM-spray 폴링 대신, 엔진이 계산한 불변 `EditorState`를 `useSyncExternalStore`로 발행해 chrome만 reactive 재렌더.
 
-- **from-scratch는 세 제안 모두 기각.** IME/selection/composition은 가장 버그가 잦은 영역으로, 10~20k LOC를 새로 써서 v1 안에 패리티 안정성에 도달하기 불가능.
-- 진짜 갈림길은 **ProseMirror vs Lexical**. **ProseMirror 채택** — 결정타는 **테이블**. summernote의 `TableResultAction`(virtual-cell 매퍼)은 가장 취약한 모듈인데, `prosemirror-tables`가 colspan/rowspan + CellSelection을 가장 검증된 형태로 제공한다. `@lexical/table`은 이 지점이 약하다.
-- IME/beforeinput/paste/selection 매핑/invertible undo는 두 엔진 모두 충분히 잘 해결.
-
-**채택 스택**: `prosemirror-model` / `-state` / `-transform` / `-view` / `-history` / `-commands` / `-keymap` / `-inputrules` / `-gapcursor` + `prosemirror-tables` + `prosemirror-schema-list`. **published 패키지를 pin해서 의존**(vendoring/fork 안 함). **Tiptap은 채택 안 함**(Tiptap이 React API를 강제하므로 — 우리는 자체 React 레이어를 설계).
-
-### 1.2 근본 패러다임 전환
-
-| 현재 (jQuery summernote) | 포팅 후 (ProseMirror 코어) |
+### 패러다임 전환 요약
+| 현재 | 포팅 후 |
 |---|---|
-| contentEditable HTML이 SSOT | **선언적 Schema + 불변 doc 트리가 SSOT** |
-| `dom.js` 60+ predicate (`isPara`/`isCell`…) | **노드/마크 타입 동일성 검사** |
-| `range.js` `WrappedRange{sc,so,ec,eo}` + offset-path bookmark | **정수 position 기반 model selection** (Text/Node/Cell/GapCursor) |
-| `dom.splitTree`/`splitNode` 직접 수술 | `prosemirror-transform`의 invertible **Step** |
-| `document.execCommand` | `(state,dispatch,view)=>boolean` **command** |
-| `History.js` HTML 스냅샷 + bookmark | `prosemirror-history` (역(inverse) Step) → stale-bookmark 류 버그 구조적 제거 (#4720/#4780 부류) |
-| `context.invoke('module.method')` | `core.command(name, ...args)` **command registry** (resolution order 동일 보존) |
-| ZERO_WIDTH_NBSP bogus-span(커서 포맷) | **storedMarks** |
-| 한국어 조합 스냅샷 hack + `isLimited` | `filterTransaction`(composition-safe `maxTextLength`) |
-| React가 contentEditable 내부를 렌더 (충돌) | **PM이 editable 서브트리를 소유**, React는 그것을 **opaque leaf**로 취급 (절대 재렌더 안 함) |
+| `Editor.js` `this[cmd]` 동적 부착 + `Context.invoke('module.method')` (오타 시 조용히 no-op) | **타입드 `Command<A> = (core, arg)=>void` 레지스트리** |
+| `Buttons.updateCurrentStyle` 셀렉터 DOM-spray 폴링 | **불변 `EditorState` 파생 → `useSyncExternalStore`** (active props) |
+| `document.execCommand` + `queryCommandState`(Firefox try/catch) | **자체 Range 명령** + **구조적 상태 검출**(try/catch 제거) |
+| 전역 `$.summernote.ui`(last-theme-wins) | **per-instance theme context** |
+| jQuery 전반 | 네이티브 DOM/이벤트/Promise (0 의존) |
+| React가 editable 내부 렌더 (커서 전쟁) | **uncontrolled editable ref, React children 0** (엔진만 씀) |
 
-### 1.3 3개 GRAFT (summernote 고유성 보존)
+### 보존(1:1 이식)되는 검증 자산
+`core/dom.ts`·`core/range.ts`(`WrappedRange` 클래스, `sc/so/ec/eo` 필드명·`normalize()`·`splitText`·`bookmark`/`createFromBookmark` 그대로; **battle-patch 보존**: `rect2bnd` null guard(ac5460e0), `setEnd` fix(9a9e01d3)), `editing/Style`(styleNodes/stylePara), `editing/Table`(TableResultAction virtual-cell 매핑), `editing/Typing`(insertParagraph→splitTree, blockquoteBreakingLevel 0/1/2), `editing/Bullet`(marginLeft ±25), `editing/History`(innerHTML+bookmark 스냅샷, stackOffset truncation, historyLimit). IE TextRange 분기는 **삭제 대신 `env.isW3CRangeSupport` 뒤로 격리**(가역적; 테스트로 dead 증명 후 정리).
 
-PM 표준을 그대로 쓰면 깨지는 3가지를 다른 제안의 강점으로 보완:
+## 2. execCommand 제거 — 자체 명령 엔진 (v1 핵심 리스크, 정면 관리)
 
-1. **GRAFT 1 — span-faithful 직렬화** (Lexical 제안에서): PM의 range-mark 모델은 명령/선택엔 옳지만 summernote의 정확한 `<span>` 중첩을 그대로 내보내지 않는다. → **직렬화 경계에서만** 커스텀 `DOMSerializer`를 작성해 `Style.styleNodes`의 span 출력을 재현(인접 동일 마크 병합 + 결정적 마크 중첩 순서: link 최외곽 → strong/em/u/s/sup/sub → fontFamily>fontSize>color>backgroundColor 최내곽). 모델은 range-marks 유지(깔끔한 `toggleMark`/`storedMarks`), **바이트 출력만 summernote 모양에 pin**. → `code()` 바이트 안정성 확보(=controlled 컴포넌트 clobber 방지의 전제).
-2. **GRAFT 2 — permissive schema + `raw_html` passthrough** (from-scratch 제안에서): strict schema가 "허용되던 레거시 HTML을 로드 시 청소"하는 소비자 가시 동작변경을 막기 위해, **sanitize됐지만 해석 불가한 마크업을 보존하는 `raw_html` 노드**를 둔다. → `code(html)` setter가 마크업을 조용히 버리지 않음. Sanitize(`codeviewFilter` regex + iframe whitelist)는 **parseDOM 이전 pre-pass**로 실행 — 보안 계약 불변.
-3. **GRAFT 3 — React-atom-as-opaque-leaf NodeView** (from-scratch 제안에서, A보다 날카롭게): image/video/table chrome(8 resize handle, float 컨트롤, 팝오버)는 **detached root의 React 컴포넌트**로 렌더하고 PM NodeView 안에 마운트 — PM은 내부를 black box로 취급. → **모든 UI를 React 단일 기술로** 유지하되 React는 텍스트 hot path를 절대 건드리지 않음. placeholder/hint/팝오버 위치는 PM `Decorations` + `view.coordsAtPos`로 (`rect2bnd`/`getBoundingClientRect` 수학 대체).
+> ⚠️ 심사가 소스 검증으로 경고: 부분/중첩/혼합 선택에 대한 `toggleInline`/`removeFormat`을 손으로 재구현하는 것은 **포팅 전체에서 단일 최대 회귀 리스크**다. (Lens B의 "color/foreColor/unlink는 이미 자체 구현, execCommand 삭제만 하면 됨"은 **거짓** — `Editor.js:269-270,279`의 color/foreColor, `:909`의 unlink는 실제 execCommand라 순수 신규 작업.)
 
-## 2. 문서 모델 스키마 (SSOT 초안)
+**자체 명령 매핑** (Lens B 레시피를 v1에 채택):
+| execCommand 호출부 | 자체 Range 구현 |
+|---|---|
+| bold/italic/underline/strike/sub/sup (인라인 토글) | `Style.styleNodes` + `splitTree` 기반 `toggleInline` |
+| justifyLeft/Center/Right/Full | `Style.stylePara`(이미 자체) |
+| backColor/foreColor(color) | `fontStyling` 패턴(span style) 확장 |
+| formatBlock(h1-6/p/pre/blockquote) | `Style.stylePara`/블록 교체(이미 대부분 자체) |
+| removeFormat | 선택 범위 마크 unwrap 핸드롤 |
+| unlink | `dom.unwrap` |
+| `queryCommandState`/`queryCommandValue`(툴바 상태) | **구조적 검출**(ancestor 타입 + `getComputedStyle`) → Firefox try/catch 제거(결정성↑) |
 
-> 단일 `schema.ts`(`new Schema({nodes, marks})`)가 `dom.js`의 60+ predicate를 대체한다.
+**리스크 관리 전략 (계획의 중심축)**:
+1. **골든 코퍼스 우선**(Phase 0): 레거시 빌드를 기존 spec + 인라인-토글/부분-중첩-혼합 선택 엣지케이스로 돌려 출력을 `test/golden/*.json`(불변 oracle)로 동결 — **자체 명령 작성 전에**.
+2. **결정적 마크업 재기준선**: execCommand 출력은 본래 **브라우저마다 비결정적**(`<b>` vs `<strong>` vs `<span>`)이라 바이트 일치가 불가능·무의미. 자체 명령은 **결정적 마크업**을 내므로, 인라인-포맷 골든은 **동작/구조 동등성 + 결정적 마크업**으로 재기준선(의도적 품질 개선으로 release-note 명시). 구조적 비교(`equalsIgnoreCase`/structural normalize)로 게이트.
+3. **명령별 점진 + 게이트**: 각 자체 명령은 실 Chrome Vitest로 골든 대조 통과 후 머지. 단일 Command 레이어를 거치므로 contained change.
 
-**블록 노드**
-- `doc` (content `block+`)
-- `paragraph` — attrs `{align?, lineHeight?, marginLeft?}` → 단일 `style=` 문자열로 직렬화 (= `isPurePara`/`stylePara`)
-- `heading` — attrs `{level 1..6, align?, lineHeight?, marginLeft?}` (= styleTags h1-h6, formatH1..6)
-- `blockquote` — content `block+`, 중첩 가능 (`blockquoteBreakingLevel` 0/1/2 구동)
-- `code_block` — content `text*`, `marks:''` (`<pre>`, 인라인 서식 없음)
-- `horizontal_rule` (leaf)
-- `bullet_list` / `ordered_list`(attrs `{start}`) / `list_item`(content `paragraph block*`, attrs `{align?, marginLeft?}`) — `prosemirror-schema-list`
-- `table` / `table_row` / `table_cell` / `table_header` — `prosemirror-tables` (cell attrs `colspan/rowspan/colwidth`) → `editing/Table.js` + `TableResultAction` 통째 대체
-- `raw_html` (atom block, attrs `{html}`) — **GRAFT 2 passthrough**
+## 3. React 경계 + 상태 브리지
 
-**인라인 노드**: `text`, `hard_break`(BR; `<p><br></p>`는 schema/view fill이지 저장 콘텐츠 아님), `image`(inline atom; attrs `src/alt/width/style/data-filename/float`; `note-float-left/right`), `video`(inline atom; parseDOM에서 `codeviewIframeWhitelistSrc` 강제)
+- `<SummernoteEditor>`는 chrome React 트리 + **단 하나의 leaf** `<div className="note-editable" contentEditable suppressContentEditableWarning ref={editableRef}>`(React children 0). 마운트(`useLayoutEffect`, StrictMode 멱등)에서 `createEditorCore(ref, options)`가 `Editor.initialize` 등가 실행(editable seed, 네이티브 keydown/keyup/input/paste/composition 바인딩 — `inputEventName` 디바운스 + `isLimited(0)`+snapshot 조합 가드를 네이티브 composition 이벤트로 이식, first undo). 이후 엔진이 editable을 imperative하게 변경 — **React reconciler는 구조적으로 배제**(커서 전쟁 종결).
+- **상태 브리지**: 엔진이 keyup/mouseup/input/change + codeview/fullscreen/disable 전환마다 타입드 불변 `EditorState`(`{marks, fontName, fontSize, lineHeight, listStyle, paraAlign, isOnAnchor, anchorHref, isOnCell, isDisabled, isCodeview, isFullscreen, canUndo, canRedo}`) 계산 → EventBus 발행. chrome은 `useSyncExternalStore(bus.subscribe, core.getState)`로 소비(`active={state.marks.bold}`). 재렌더는 **chrome 트리만** 건드림(editable host엔 React children 0이라 contentEditable selection 불변). 구조적 동등성 bail로 thrash 방지.
+- 다이얼로그는 이식된 `saveRange()`/`restoreRange()`(React `<input>` 포커스 시 editable selection 소실 — 현 계약 동일).
 
-**마크** (range-applied; 커스텀 serializer가 span 중첩 pin): `strong`/`em`/`underline`/`strikethrough`/`superscript`↔`subscript`(상호배타)/`link`(href,target,rel) + 파라미터화 스타일 마크 `fontFamily`/`fontSize`(value,unit px|pt)/`color`/`backgroundColor` → `<span style>`
+## 4. jQuery 제거 (bottom-up, 레이어별 test-green)
 
-> **핵심 원칙**: block-level `text-align`/`line-height`/`margin-left`는 **마크가 아니라 노드 attr**(inline style로 직렬화). `code()` 바이트 비교 가능성을 위해 의도적으로 일반 style 노드를 쓰지 않음.
+| 레이어 | 교체 |
+|---|---|
+| L0 func/lists | 이미 순수 — `$` import만 제거 |
+| L1 dom/range | `$(n).css` 읽기→`getComputedStyle`(단일 `readStyle()` seam), `dom.html`→`innerHTML`, `$.each`→`forEach`, `$note.trigger`→`dispatchEvent`, `WrappedRange`가 네이티브 Range 래핑 |
+| L2 editing/* | `$(para).css(obj)`→`Object.assign(el.style)`, `$(node).data('target')`→per-core `WeakMap` |
+| L3 Editor | shallow merge는 object spread; **deepMerge는 langInfo+icons에만**(검증된 shallow-top-level 계약); `$.now`→`Date.now`; `readFileAsDataURL`/`createImage` Deferred→Promise(`.fail`→`.catch`) |
+| L4 Context→EditorCore | `triggerEvent` dual-fire 유지(콜백을 editable 요소에 바인딩 + CustomEvent — `Context.js:138-147`); `$.data('summernote')`→instance map |
+| L5 modules/UI | dialog Deferred→Promise; lang deep-merge→object registry |
 
-## 3. 모노레포 / 패키지 구조
+**행동 민감 watch-item**: `getComputedStyle` vs jQuery `.css()` 정규화 차이(color `rgb()`, 단위, shorthand)가 `Style.fromNode/current` 툴바 상태에 영향 → 변환 전후 `equalsStyle` 매처로 코퍼스 선택셋 대조. **강제**: 신규 패키지 `jquery` import 0 — ESLint `no-restricted-imports`/`no-restricted-syntax($)` + CI grep 게이트(1일차부터).
 
-> pnpm workspaces + Turborepo, TypeScript strict(composite project refs). 현 단일 `summernote` IIFE 4번들 → 독립 버저닝되는 tree-shakable ESM+CJS+types 패키지로 분할.
+## 5. 모듈 분리 (22개)
+
+타입드 `EditorCore` 오케스트레이터(command map + EventBus) 유지. `CORE_MODULE_ORDER`로 **hintPopover-before-autoLink 순서 보존**(Enter-in-hint range 에러 회귀 방지).
+
+- **ENGINE-LOGIC (헤드리스 코어 잔류, TS 서비스)**: editor, clipboard, dropzone, **codeview**(purify/codeviewFilter/codeviewIframeFilter — **보안 크리티컬, 코어에만 verbatim 이식, chrome로 가면 XSS 홀**), autoLink, autoReplace, autoSync, placeholder(상태), handle 지오메트리, statusbar resize 수학, history, followingToolbar.
+- **REACT-CHROME (테마별 React 컴포넌트, command 디스패치 + EditorState 구독)**: toolbar, buttons, 전 다이얼로그(link/image/video/help), 전 팝오버(link/image/table/air), statusbar UI, fullscreen UI, placeholder 표시. `ui_template`/`renderer`의 25-메서드 팩토리 → 테마별 React 컴포넌트셋(`.note-*` 클래스/SCSS 재사용). per-instance theme로 전역 `$.summernote.ui` 깨짐 해결.
+
+## 6. 모노레포 / 패키지 구조
+
+> Yarn workspaces(node-modules linker, Node≥17), TS project references. 빌드/테스트 툴(Vite/Vitest)만 dev 의존 — **출하 패키지의 제3자 editor/runtime 의존 0**(react/react-dom는 peer).
 
 ```
 packages/
-  core/         @summernote/core — PM 엔진. schema/(nodes,marks,blockStyleAttrs,index)
-                serialize/summernoteDOMSerializer(GRAFT1), parse/(sanitize,parseDOM GRAFT2)
-                commands/(registry+inlineMarks/styleMarks/blocks/lists/enter/tables/link/media/structure)
-                inputrules, keymap, SummernoteCore(host), options(deepmerge), events(typed EventEmitter)
-                state/chromeStatePlugin(useSyncExternalStore snapshot), plugin/(types/assemble/context/
-                command-registry/react-node-view), i18n/(I18n + en-US SSOT). tsup dual, sideEffects:false
-  react/        @summernote/react — SummernoteEditor.tsx(controlled/uncontrolled+imperative handle),
-                useSummernote.ts, SummernoteContext.tsx(per-instance {core,theme,i18n}),
-                hooks/, primitives/(Button/Dropdown/ColorPalette/TableDimensionPicker/Modal/Popover/…),
-                buttons/(registry+~40 builtins), components/(ToolbarRenderer+dialogs/+popovers/), ssr.ts.
-                peerDeps react/react-dom/@summernote/core
-  core-utils/   env, async(native Promise), fn(combinators+deepmerge/debounce/clusterBy/rect2bnd),
-                dom-helpers(chrome bounds/parseFragment), keymap-codes. 0 runtime deps, ESLint 'jquery' ban
-  icons/        @summernote/icons — scripts/build-fonts.js(prebuild) → woff2/woff(+ttf/eot) + icons.css
-  theme-core/   공통 SCSS(common/elements) → css, depends icons
-  theme-{lite,bs3,bs4,bs5}/  per-theme SCSS→style.css/.min.css + React chrome 컴포넌트셋
-  i18n/         50+ typed LocaleModule(codegen from public/lang/*) + per-locale subpath exports + manifest
-  plugin-{hello,databasic,specialchars}/  typed plugin descriptor (peerDep core)
-  standalone/   UMD/IIFE CDN 번들(core+react+react-dom+theme-lite) + release zip
-test/
-  golden/       레거시 빌드에서 추출한 불변 oracle 코퍼스(JSON) + parity-allowlist.json
-  {unit,view,react,e2e,parity}/ + setup/matchers.ts  — 5-tier + parity runner + normalize.ts
-root: pnpm-workspace.yaml, turbo.json, tsconfig.base.json, vitest.workspace.ts,
-      playwright.config.ts, .changeset/, scripts/{banner.ts,extract-golden.js,i18n-migrate.mjs,parity-gate.js}
+  core/      @summernote/core — 헤드리스, React-free, 런타임 의존 0.
+             src/core/{types,env,func,lists,dom,range,async,EventBus,commandRegistry}.ts
+             src/editing/{Style,Typing,Bullet,Table,History}.ts
+             src/EditorCore.ts + src/commands/(자체 Range 명령: inline/style/block/list/table/link/media/structure)
+             src/services/{clipboard,dropzone,codeview,autoLink,autoReplace,autoSync,hint,handle,statusbar,followingToolbar}.ts
+             src/state/{EditorState,instanceRegistry}.ts, src/plugin/{types,registry}.ts, src/options.ts
+  react/     @summernote/react — peerDeps react/react-dom≥18 ONLY; dep @summernote/core.
+             useSummernote.ts, SummernoteEditor.tsx, ThemeContext.tsx, state/useEditorState.ts, ssr.ts
+  themes-{lite,bs3,bs4,bs5}/  React chrome 컴포넌트셋 + per-theme SCSS. ThemeSpec(class 문자열=데이터);
+             Bootstrap JS 없음(lite의 Dropdown/Modal/Tooltip 동작을 보편 구현으로 이식). .note-* 계약 그대로.
+  styles-common/  공유 scss(common/elements)
+  icons/     @summernote/icons — build-fonts.js 재사용 → TTF/EOT/WOFF/WOFF2 + font.css
+  i18n/      @summernote/i18n — en-US.ts as const(LangCatalog SSOT) + locales/<code>.ts(50+, DeepPartial) +
+             resolveLang(deepMerge base+override, exact-key fallback) + per-locale subpath exports
+  plugin-{hello,specialchars,databasic}/  typed definePlugin (no jQuery/UMD)
+  standalone/  UMD/IIFE drop-in(core+react+lite+icons+en-US, react/react-dom globals) + min/non-min + zip
+root: tsconfig.base.json, vitest.config.ts(browser mode, src 별칭), .changeset/, scripts/(build-all.ts,
+      check-no-jquery.sh, vitePostCSSSourceMap.mjs), eslint.config.editor.mjs(jquery ban)
+모든 editor 패키지: ESM+CJS+.d.ts, exports map(types/import/require + ./style.css), sideEffects 정확.
 ```
 
-## 4. 서브시스템별 포팅 전략
-
-### 4.1 문서 모델 스키마 + 명령 세트 (XL) — 편집 엔진의 심장
-`Editor.js` + `editing/*` + `dom/range` 수술을 대체. ~60개 타입드 command, 커스텀 span serializer, sanitizer, keymap, inputrules.
-
-| 현재 | 대체 |
-|---|---|
-| `editing/Table.js` + `TableResultAction` | **DROP** → `prosemirror-tables` (최대 리스크 감소) |
-| `editing/Bullet.js` | `wrapInList`/`liftListItem`/`sinkListItem` + 비리스트 para는 `marginLeft` attr |
-| `editing/Typing.js` `insertParagraph` | `commands/enter.ts` chainCommands (blockquote breaking, li-escape) |
-| `editing/Style.js` styleNodes/current | 마크(`toggleMark`) + 블록 attr + GRAFT1 serializer; `queryCommandState` → EditorState에서 읽기 |
-| `editing/History.js` | `prosemirror-history` (`newGroupDelay`≈recordEveryKeystroke, depth≈historyLimit) |
-| execCommand bold/italic/justify… | `toggleMark`/`setBlockType`/`setMark`; bogus-span → storedMarks; isLimited → filterTransaction |
-| `Codeview.purify` regex | **REUSE-as-TS** → `parse/sanitize.ts` (parseDOM 전 pre-pass) |
-| `settings.js` keyMap / styleTags / colors… | **데이터로 그대로 소비** |
-| `dom.js`/`range.js` 편집 두뇌 | **DROP** (schema 동일성 + PM position/transaction이 흡수) |
-
-키맵: `keyMap.pc/mac`를 `prosemirror-keymap`이 직접 소비. ENTER = chainCommands[empty-li escape, blockquote break(level), splitListItem, heading/pre→p, splitBlock]. TAB = 셀 네비 vs indent 컨텍스트 디스패치. `options.shortcuts===false`면 keymap plugin 생략.
-
-### 4.2 React 통합 (XL) — 헤드리스 코어 + 훅 + 컴포넌트
-`summernote.js`($.fn) + `Context.js`를 3계층으로:
-- **Layer 1 헤드리스 `SummernoteCore`** (0 React, 0 jQuery): Schema/EditorView/plugin set/CommandRegistry 소유. `core.command(name,...args)`가 `Context.invoke` resolution order를 정확히 재현(bare→core methods 우선, 그다음 editor group, 그다음 `module.method` 키). `getHTML`/`setHTML`이 **`code()` 계약 보존**(codeview 분기, host textarea 미러, `onChange` fire, codeview-open getter 모호성까지). `deepmerge`가 `$.extend` 대체 + **top-level shallow merge footgun 수정**(callbacks/keyMap/popover deep merge, `mergeStrategy` escape hatch).
-- **Layer 2 `useSummernote(options)`**: `useLayoutEffect`로 client-only mount, `useSyncExternalStore(core.subscribe, core.getSnapshot)`로 **chrome만 재렌더 / editable DOM은 절대 재렌더 안 함**. 비구조적 옵션 변경은 `core.updateOptions()`(remount 없이).
-- **Layer 3 `<SummernoteEditor value onChange options theme disabled lang>`**: controlled는 incoming value를 `core.getHTML()`과 **정규화 동일성**으로 비교(raw string 아님)해 진짜 다를 때만 적용 → **controlled-contentEditable clobber 방지**. uncontrolled는 `defaultValue` 1회. `forwardRef` + `useImperativeHandle`로 타입드 handle(`getHTML/setHTML/focus/enable/disable/reset/command(...)`).
-
-**구조적 수정**: 전역 `$.summernote.ui` 폐기 → **테마는 per-instance React context** → 서로 다른 테마의 N개 에디터 공존(현 "last-theme-wins" 깨짐 해결). 콜백 `this=$note[0]` 바인딩은 **의도적 제거**(strict, 타입드 payload). `AutoSync`는 별도 모듈 없이 `setHTML`/`onChange` host-mirror에 흡수. SSR: sanitized 정적 placeholder + `useLayoutEffect` client mount(host는 leaf, `suppressHydrationWarning`).
-
-### 4.3 React UI 컴포넌트 라이브러리 (XL) — chrome
-`renderer.js` + `ui_template`(25메서드) + 4 테마 팩토리 + lite의 DropdownUI/ModalUI/TooltipUI를 React 컴포넌트로. **요구**: ① `.note-*` DOM/class 계약 그대로 재현(기존 SCSS·아이콘 webfont 무수정 동작) ② 모든 액션을 `core.command()`로 ③ format 상태를 `useSyncExternalStore`로 EditorState에서 reactive하게 읽기(`updateCurrentStyle` 폴링 제거) ④ per-instance 테마 ⑤ `[group,[buttons]]` config 공개 API 유지. ~40 버튼 + 13 primitive + 4 테마 맵 + 8 다이얼로그/팝오버. 다이얼로그는 `core.openDialog(<Comp/>):Promise`(saveRange/restoreRange → state.selection 스냅샷). 표준 Modal/Tooltip은 **Bootstrap JS 없이** 동작.
-
-### 4.4 jQuery 제거 맵 + core-utils (M)
-`core/*`를 4가지 운명으로 분류:
-- **SUPERSEDED-BY-MODEL (삭제)**: `range.js` 전체(WrappedRange, IE TextRange, bookmark, splitText/deleteContents/insertNode/pasteHTML, getWord*Range), `dom.js` tree-surgery + boundary-point(splitNode/splitTree, prev/nextPoint, makeOffsetPath…). → PM position/Selection/Step.
-- **RELOCATED-TO-SERIALIZATION (런타임 삭제, 지식은 이동)**: 노드 분류 predicate(isPara/isInline/isList/isCell…), blankHTML/emptyPara → schema parseDOM 규칙 + GRAFT1 serializer.
-- **KEPT-AS-TS**: `env.ts`(IME/font probing; `inputEventName`/`isW3CRangeSupport` 삭제), `key.js`→`keymap-codes.ts`(code↔name만), `async.ts`(native Promise), `func.js`→`fn.ts`(combinators + uniqueId/debounce/deepmerge/isValidUrl/clusterBy/rect2bnd).
-- **DROPPED-FOR-STDLIB**: `lists.js` head/tail/find/all/contains… → `Array.prototype`/`Set`. `clusterBy`만 유지.
-
-jQuery idiom→native 표: `$.fn.summernote`→React/Core, `$.extend(true)`→`deepmerge`, `$.each`→`for...of`, `$.Deferred`→`Promise`, `$(el).on/off/trigger`→`addEventListener`+`AbortController` & 코어 EventEmitter, PM editable 이벤트는 `handleDOMEvents`/`handleKeyDown`/`handlePaste`로(→ `inputEventName` IME workaround 삭제), `offset()`/`rect2bnd`→`coordsAtPos`/`getBoundingClientRect`. **신규 패키지에 `import 'jquery'` 0개 — ESLint `no-restricted-imports` + CI grep 게이트로 1일차부터 강제.**
-
-### 4.5 플러그인 시스템 (L)
-전역 `$.summernote.plugins` + module 레지스트리 + `context.memo` + `$.Deferred` 다이얼로그 → **타입드 선언적 `SummernotePlugin` descriptor**(per-instance `options.plugins`, 전역 없음). 기여 슬롯: `schema`(노드/마크) / `commands` / `keymap` / `inputRules` / `pmPlugins` / `nodeViews`(React-atom) / `ui`(toolbar/popover/dialog React) / `i18n` / `options` / `lifecycle`. `PluginContext`(jQuery-free): `{core, command(), getHTML/setHTML, state, on(), openDialog(reactNode):Promise<T>, t(), options, view}`. databasic의 `<data>` raw DOM 노드 → **진짜 schema 노드 + React node view**. 충돌 정책: 빌트인 먼저 등록, 빌트인 override는 `override:true` 명시(현 "조용한 덮어쓰기" footgun 수정). 빌트인 코어 모듈을 같은 descriptor로 dogfood해 충분성 검증. 마이그레이션 가이드 + databasic 완전 샘플.
-
-### 4.6 i18n (M)
-전역 `$.summernote.lang` + `$.extend(true)` → 타입드 per-instance code-split i18n. en-US가 `as const` SSOT, `Messages = DeepReadonly<typeof enUS>`, `PartialMessages = DeepPartial`(부분 로케일 허용, 오타는 컴파일 에러). `resolveCatalog(enUS, locale, ...plugin)` deep-merge로 **en-US fallback-base 계약 재현**(ko-KR 등 부분 로케일 back-fill). 로케일은 `import()` code-split(각 ~3KB chunk). 호출부 `this.lang.link.url` dotted access는 **무수정 유지**(패리티). **codemod**(`i18n-migrate.mjs`)가 `$`/`jQuery` stub으로 47개 레거시 IIFE를 타입드 ESM 모듈로 일괄 변환 + manifest 생성. 골든 테스트: 각 로케일 `resolveCatalog` 출력이 레거시 `$.extend(true)` 출력과 deep-equal.
-
-### 4.7 빌드 / 패키징 / 배포 (L)
-Vite lib(SCSS 테마) + tsup(core/react/i18n/plugins, dual ESM+CJS+dts) + `vite-plugin-dts`. **jQuery external → react/react-dom/@summernote/core external + prosemirror-*는 일반 dep**(번들러 dedupe, externalize 안 함 — dual-package hazard 주의). `sideEffects:false`(테마 CSS만 `['*.css']`). webfont 파이프라인(`build-fonts.js`)은 거의 그대로 `@summernote/icons`로 이전. types-first conditional exports map. Changesets로 독립 버저닝/배포. standalone UMD 번들 + release zip 유지(기존 CDN 사용자). attw + publint + tree-shaking smoke test를 CI 게이트로.
-
-### 4.8 테스트 / 패리티 검증 (XL) — 전체 포팅의 검증 백본
-**5-tier 피라미드 + 골든 코퍼스 oracle**:
-- **Tier 0 골든 추출**: 현 jQuery 빌드를 `test/base/**/*.spec.js`로 돌려 `{inputHTML, action, expectedHTML, expectedSelection}`를 `test/golden/*.json`(불변 oracle)으로 캡처. 추출기는 먼저 레거시 spec을 self-check해 신뢰 확보.
-- **Tier 1 순수 유닛(Node)**: schema round-trip, serializer span-grouping(style.spec 시드), Step invertibility(property-based), command outcomes, tables cell-mapper(Table.spec 시드), sanitizer(Codeview.purify 시드), raw_html.
-- **Tier 2 view/contentEditable(Vitest browser, Chrome)**: EditorView mount, beforeinput, selection 매핑, coordsAtPos, **IME/composition**(한글/CJF dup/drop 0, 1 undo/composition), **paste sanitization**, **undo correctness**, maxTextLength mid-composition.
-- **Tier 3 React(RTL)**: controlled no-clobber, useSyncExternalStore(chrome 재렌더/editable 안정), multi-theme 공존, SSR hydration.
-- **Tier 4 E2E + 시각(Playwright)**: 키보드 여정 골든 대조, 4테마 스크린샷 baseline(현 빌드 캡처) 픽셀-diff.
-
-**수락 게이트**(`parity-gate.js`): 골든 레코드 100% 통과 **또는** 리뷰된 `parity-allowlist.json`에 정당화와 함께 등재(미리뷰 diff 0). 레거시가 인코딩한 구현 세부(bogus-span fontSize HTML)는 'parity'가 아닌 '의도적 동작변경'으로 재분류 후 새 기댓값 명시.
-
-## 5. 단계별 로드맵
+## 7. 단계별 로드맵 (execCommand 제거 반영)
 
 | Phase | 제목 | 목표 | 종료 기준(요약) | 의존 |
 |:--:|---|---|---|:--:|
-| **0** | 모노레포 골격 + 골든 oracle + thin 수직 슬라이스 | strict-TS workspace, **신규 코드 작성 전** 레거시 동작을 불변 oracle로 동결, 가장 위험한 코어 경로(EditorView mount→type→serialize→IME) end-to-end 증명 | `turbo build typecheck lint` green, jQuery import lint 통과; 골든 추출기 self-check 통과; 슬라이스가 실브라우저에서 타이핑·bold/italic round-trip·한글 조합 무손실; attw/publint clean | none |
-| **1** | Schema SSOT + span-faithful serializer + sanitizer (**패리티 백본**) | 전체 Schema 완성, `code()` 바이트 충실도를 serializer에 pin(GRAFT1), 보안 계약을 pre-parse sanitizer에 pin(GRAFT2) | 골든 parse→serialize 바이트 동일(또는 allowlist, 미리뷰 0); sanitizer가 모든 purify fixture 재현 + 모든 ingress 경로에서 pre-parse 증명; 모든 노드/마크 parseDOM↔toDOM round-trip | 0 |
-| **2** | 명령 레지스트리 + keymap + inputrules + history (**편집 엔진**) | ~60 command, settings.js keyMap 바인딩, history/inputrules — Editor.js+editing/* 대체 | 모든 keyMap 엔트리가 command로 해결+레거시 동작; 골든 editor/typing/table/links 통과; undo가 정확한 이전 HTML+selection 복원, IME 조합=1 undo; bogus-span 류 assertion은 의도적 변경으로 재분류 | 1 |
-| **3** | 헤드리스 코어 API + options + events + i18n 엔진 | `SummernoteCore` 공개 계약(code/enable/disable/reset/destroy/focus, 18-콜백) + per-instance i18n | getHTML/setHTML이 `Context.code()` 정확 재현(codeview 모호성·textarea 미러·change); 18콜백 정확 발화; deepmerge가 레거시 `$.extend(true)` 일치(의도적 top-level 변경 제외); 47 로케일 마이그레이션+strict 통과 | 2 |
-| **4** | React chrome primitive + per-instance 테마 + 훅/컴포넌트 | 컴포넌트 라이브러리(primitive/~40버튼/ToolbarRenderer/다이얼로그/팝오버) + controlled `<Summernote>` + `useSummernote()` | 4테마 byte-equiv `.note-*` DOM(골든 스냅샷); 다른 테마 2 에디터 공존(last-theme-wins 회귀 통과); controlled no-clobber + editable 안정; 전 툴바/팔레트/다이얼로그/팝오버/resize handle 동작; Bootstrap JS 없이 modal/tooltip | 3 |
-| **5** | 플러그인 + node-view + 패키징/배포 + 완전 패리티 게이트 | 타입드 plugin API(빌트인 dogfood), image/video/table React node-view(GRAFT3), 멀티패키지 배포, v1.0 수락 게이트 | 3 레퍼런스 플러그인이 jQuery/execCommand 없이 표현; 골든 100% 통과(또는 allowlist); 4테마 시각 baseline; 전 패키지 attw/publint/tree-shaking clean; Changesets 배포 — **v1.0 게이트 통과** | 4 |
+| **0** | 모노레포 골격 + 테스트 하네스 + **골든 코퍼스 동결** | 워크스페이스·패리티 인프라 먼저. 레거시 동작(인라인-토글/부분-중첩-혼합 선택 포함)을 **엔진 손대기 전** 불변 oracle로 동결 | `yarn build`가 core/react ESM+CJS+dts 산출; `yarn test` 실 Chrome green; `test/golden/*.json` 동결 + freeze-guard; CI no-jquery/zero-dep 게이트; jQuery-free 매처 | none |
+| **1** | **thin 수직 슬라이스** — jQuery-free 엔진 spine + uncontrolled React 경계 + IME (3대 리스크 front-load) | 최소 기능으로 아키텍처 end-to-end 증명: dom/range 1:1 이식, EditorCore가 insertText(wrapped) + 저위험 자체 명령 1개 실행, uncontrolled-ref React 컴포넌트 마운트, IME 처리 | 한글 IME가 undo/caret 미손상; 강제 chrome 재렌더에도 editable 서브트리 node-identical; controlled value no-clobber; `dom.spec`/`range.spec` 그대로 이식 green | 0 |
+| **2** | **전체 엔진 포팅 + 자체 명령 레이어(execCommand 제거)** | editing/* 1:1 + 전체 타입드 Command 레지스트리를 **자체 Range 구현으로**(인라인 토글/justify/color/unlink/removeFormat). `queryCommandState`→구조적 검출. 헤드리스 서비스 이식. **프로젝트의 심장이자 최대 리스크** | PORT-DIRECTLY spec(core/* + editing/style·Typing·Table) green; 코퍼스-diff: **구조적 명령은 zero-diff, 인라인-포맷은 재기준선 결정적 마크업으로 통과**; codeview XSS 게이트 필수 green; core 런타임 의존 0, tsc strict | 1 |
+| **3** | React 경계 + lite 테마 chrome (첫 풀기능 단일 테마) | 완전한 lite React 에디터: 전 chrome을 헤드리스 코어에 연결. controlled/uncontrolled 계약, imperative handle, per-instance theme, en-US i18n, 플러그인 API + hello 레퍼런스 | lite가 레거시 lite와 기능 패리티; 툴바 active-state가 EditorState로 일치; 다이얼로그 caret 보존; lite `.note-*` DOM 스냅샷 일치; controlled 루프 no-clobber | 2 |
+| **4** | 나머지 3테마(bs3/bs4/bs5) + 전체 i18n + 플러그인 + 교차테마 시각 게이트 | 완전 v1 패리티 범위. 테마=데이터(ThemeSpec class 문자열)라 컴포넌트 재작성 없음 | 다른 테마 2 에디터 공존(last-theme-wins 해결); 50+ 로케일 byte-identical + tree-shake; specialchars/databasic 이식; Tier-4 시각 게이트(class 존재 + computed-style 동등) 4테마 green | 3 |
+| **5** | 패키징·배포·릴리스 엔지니어링 + 마이그레이션 문서 | 그래뉼러 패키지 그래프(icons/themes-css/standalone UMD), Changesets, exports maps, breaking-change 노트 | 전 패키지 publish-dry-run clean(exports/types/sideEffects); 제3자 editor/runtime 의존 0(CI 검증); v1.0 수락 게이트 green; release notes + 마이그레이션 가이드 | 4 |
 
 ### 마일스톤 게이트
-- **v0.1 (Phase 2 종료)**: 헤드리스 코어가 전체 schema로 실브라우저 mount, 전 keyMap 바인딩, bold/heading/list/link/table/blockquote/undo 동작, 골든 parse→serialize 바이트 동일, sanitizer 검증, IME+maxTextLength 무손실. **React·테마 없음 — 편집 심장이 모델 레벨에서 패리티 증명.**
-- **v0.5 (Phase 4 종료)**: 공개 React 표면 사용 가능 — controlled `<Summernote>` + 훅 + imperative handle, 18콜백, per-instance i18n(47 로케일), 4테마 byte-equiv, 전 툴바/팔레트/다이얼로그/팝오버/resize, 다른 테마 공존, no-clobber. **React 앱이 주류 용도로 레거시 summernote 대체 가능.**
-- **v1.0 (Phase 5 종료)**: 완전 패리티 — 플러그인 시스템(3 레퍼런스+dogfood+가이드), image/video/table node-view, 멀티패키지 배포(clean attw/publint/tree-shaking), Changesets. 골든 100% 통과(미리뷰 diff 0), 시각 baseline, 전 IME/paste/undo 통과, 게이트가 회귀 차단.
+- **v0.1 (Phase 1)**: jQuery-free dom/range 이식(`dom.spec`/`range.spec` green); uncontrolled-ref `<SummernoteEditor>`가 마운트해 자체 명령 + before/afterCommand + History 실행; IME 정확; reconciler-exclusion/StrictMode/no-clobber 회귀 green. **3대 리스크 소진, 실제 동작.**
+- **v0.5 (Phase 3)**: `@summernote/core` 풀 헤드리스 패리티(PORT-DIRECTLY spec green; 코퍼스-diff 게이트 통과; codeview XSS green; 의존 0). 완전 lite React 에디터(전 툴바/드롭다운/다이얼로그/팝오버/statusbar/handle/fullscreen/placeholder + 계약 + per-instance theme + en-US + 플러그인 + hello). **레거시 lite 대체 가능.**
+- **v1.0 (Phase 5)**: 4테마 + air mode, 22모듈 전 기능, 플러그인(hello/specialchars/databasic), 50+ 로케일 tree-shakeable. 수락 게이트(Tier 1-4 + 교차테마 시각) green. 그래뉼러 패키지 배포. **제3자 editor/runtime 의존 0, execCommand 0, jQuery 0.**
 
-## 6. 의존성 / 순서 제약 (핵심)
-- **Schema(Phase 1)는 전 상류 의존** — command/serializer/parser/node-view/plugin/getHTML 전부가 노드/마크 spec 참조. schema·toDOM/parseDOM 동결 전엔 하류 안정 불가.
-- **골든 oracle(Phase 0)은 신규 코드 존재 전에 추출** — 아니면 불변 기준이 없어 패리티 주장이 순환. 추출기는 레거시 spec self-check 필수.
-- **GRAFT 1(serializer)은 Phase 1에 골든 diff 테스트와 함께 착지** — 이후 모든 패리티 단언이 바이트 안정 parse→serialize에 의존.
-- **Sanitize(GRAFT 2)는 parseDOM 이전, 모든 ingress 경로(setHTML/pasteHTML/video parse)** — 한 경로라도 빠지면 script/iframe 주입 재오픈. Phase 1 보안 불변식.
-- **command resolution order는 Phase 2에 한 번 고정** 후 core.command/imperative handle/plugin command가 동일 소비.
-- **prosemirror-*는 일반 dep(externalize 금지)** — dual-package hazard(두 prosemirror-model 인스턴스 instanceof 깨짐)를 Phase 0부터 attw/publint로 게이트.
+## 8. 의존성 / 순서 제약
+- **임계경로**: 0(하네스+동결 코퍼스) → 1(thin slice/리스크 소진) → 2(전체 엔진+자체 명령) → 3(lite chrome) → 4(3테마+i18n+플러그인+시각) → 5(패키징). 각 단계는 이전 종료 기준으로 게이트, big-bang 없음.
+- **골든 코퍼스는 Phase 0에 레거시에서 먼저 기록** — 포팅에서 재생성하면 회귀 세탁(freeze-guard 강제). **엔진 보존의 이점**: 순수-엔진 레거시 spec 6종(core/{dom,range,func,lists,key} + editing/{style,Typing,Table})은 **그대로 이식**(it() 제목·기대 HTML 리터럴 유지, 하네스 I/O만 교체) → Phase 1-2의 verbatim 이식을 거의 무비용으로 게이트. 8종 Context/module spec은 1:1 이식 불가 → 골든 코퍼스 추출원 + Tier-2/3 재작성.
+- **EventBus + EditorState + EditorCore 스캐폴딩(Phase 1/2)이 chrome(Phase 3+) 전에 착지** — React는 구독만, editable에 절대 안 씀. `CORE_MODULE_ORDER`(hintPopover < autoLink)를 Phase 2에 ordered dispatch로 인코딩.
+- **테마=데이터**: Phase 3이 lite ThemeSpec로 보편 컴포넌트 구축, Phase 4는 ThemeSpec 3개만 추가(컴포넌트 재작성 없음) → Phase 4 bounded.
 
-## 7. 리스크 레지스터
+## 9. 리스크 레지스터 (자체 명령 제거 반영)
 
 | 리스크 | 영향/확률 | 완화 |
 |---|---|---|
-| GRAFT1 바이트 충실도: PM range-mark가 span 중첩 미재현 → code() 드리프트 → controlled clobber | 高/高 | Phase 1에 serializer + 골든 diff를 hard gate; controlled에서 canonical PM doc 비교(문자열 아님); allowlist cap+sign-off |
-| strict schema가 로드 시 레거시 HTML 청소(동작변경) | 高/中 | `raw_html` passthrough(GRAFT2); 의도적 정규화 break 문서화; 코퍼스에 raw_html round-trip |
-| IME/composition + maxTextLength(filterTransaction) = 레거시 최취약부 | 高/中 | Phase 0 슬라이스+Phase 2 전용 IME 스위트; Vitest browser flaky 시 Playwright 결정적 스크립팅; 1-undo/composition 단언 |
-| 레거시 spec이 폐기된 구현 세부(ZERO_WIDTH_NBSP) 인코딩 → 의도변경/회귀 혼동 | 中/高 | Phase 2에 'parity'→'의도적 변경' 명시 재분류, 정당화 allowlist |
-| ProseMirror dual ESM+CJS: dual-package hazard / CJS named-export interop | 高/中 | prosemirror-* dedupe dep; Phase 0부터 attw+publint; CJS 수요 낮으면 ESM-only core |
-| per-instance React 테마가 전역 `$.summernote.ui` + ui_template 폐기(소비자 hard break) + 4테마 `.note-*` DOM 패리티 면적 | 中/高 | 레거시 `ui_template().render()` 골든 DOM 스냅샷; CSS는 전역 유지/컴포넌트셋만 per-instance 문서화 |
-| 기존 UMD 플러그인 미로드(생태계 churn), strict schema가 custom-DOM 플러그인 거부 | 中/高 | 타입드 descriptor + databasic 완전 샘플 + 매핑 표; compat shim은 v1 범위 밖 명시 |
-| 교차테마 시각 스냅샷 brittle / 추출기 충실도 | 中/中 | 픽셀-diff threshold + 동적영역 마스킹 + CI Chrome pin; 추출기 self-check 선행 |
-| `dom.js`/`range.js`의 수년치 contentEditable quirk 수정 누락 위험 | 高/中 | 망라적 골든 HTML+selection 코퍼스; per-symbol 운명 인벤토리(무손실); jQuery import lint 차단 하에 lazy 마이그레이션 |
+| **자체 인라인-포맷 명령(toggleInline/removeFormat over 부분/중첩/혼합 선택)이 execCommand 동작을 재현 못 함 → 마크업 드리프트** | **高/高** | 골든 코퍼스 우선 동결 → 결정적 마크업으로 재기준선(구조적 동등 게이트); 명령별 점진 + 실 Chrome 대조; 부분/중첩/혼합 선택 엣지케이스 코퍼스 망라 |
+| `range.normalize()`(6 visible-point + reverse) 재배열 → caret 오배치(단일 최대 함수 회귀면) | 高/中 | byte-1:1 이식, cleanup 금지; 전용 test anchor; `range.spec` green; 선택 민감 시나리오 코퍼스-diff |
+| `getComputedStyle`가 jQuery `.css()`와 정규화 다름(color rgb()/단위/shorthand) → 툴바 active-state | 中/高 | 단일 `readStyle()` seam; 각 변환 전후 `equalsStyle`로 코퍼스 선택셋 대조; `node.style.fontSize` override 경로 유지 |
+| controlled-value caret clobber: lastEmitted self-origin 가드/정규화 오류로 매 키 innerHTML 재seed | 高/中 | Phase 1 slice에서 소진 + Tier-3 caret 테스트; `value!==core.getHTML()` AND non-self-origin일 때만 setHTML; uncontrolled는 sync 생략 |
+| React reconciler가 `.note-editable` 안에 children 렌더 → 커서 전쟁 부활 | 高/低 | editable leaf는 계약상 React children 0; node-identity 안정성 회귀 테스트(Phase 1~) |
+| codeview purify가 chrome으로 오배선 → 신뢰불가 HTML XSS 홀 | 高/低 | **하드 요구**: `@summernote/core/services/codeview.ts`에만, chrome import 금지; non-skippable verbatim XSS 게이트 |
+| IME/composition을 합성 이벤트로 완벽 모사 불가 | 中/中 | Phase 1에 composition 가드 로직을 이벤트 경계에서 단언; 실-IME 수동 QA 체크리스트 |
+| Bootstrap JS 제거로 bs3/4/5 modal/tooltip/dropdown 시맨틱 변화 | 中/中 | 검증된 lite Dropdown/Modal/Tooltip을 보편 구현으로; 시각 클래스 보존; 의도적 divergence 문서화; Tier-4 시각 게이트 |
+| Dual ESM+CJS dual-package hazard | 中/低 | 인스턴스 상태는 `EditorCore` 객체(모듈 전역 아님); exports-map 순서; CI가 두 빌드 import |
 
-## 8. 첫 2주 (즉시 착수)
-1. 리포를 pnpm workspace로 전환: `pnpm-workspace.yaml`, root `package.json` + `turbo.json`(build dependsOn ^build), `tsconfig.base.json`(strict, composite, exactOptionalPropertyTypes), 공유 eslint/prettier; **`jquery` import 금지 ESLint + CI grep 게이트를 commit 1부터.**
-2. `scripts/banner.ts`(banners + version를 vite.config.js에서 이전); 레거시 `summernote@0.9.1` 빌드를 추출기용으로 in-repo pin.
-3. `scripts/extract-golden.js`: 현 jQuery summernote + lite를 로드해 `test/base/{module/Editor,editing/style,editing/Typing,editing/Table,module/Codeview}.spec.js`의 단언을 replay → `{inputHTML,action,expectedHTML,expectedSelectionPath}` JSON; **레거시 spec self-check 선행**.
-4. `@summernote/core-utils` 포팅(env/async/fn/keymap-codes/dom-helpers) + tier-1 유닛; deepmerge가 langInfo/icons에서 레거시 `$.extend(true)` 일치 단언.
-5. `@summernote/core`에 prosemirror-* 추가; **최소 schema**(doc/paragraph/text/strong/em/hard_break) + first-cut `summernoteDOMSerializer` + 실 EditorView를 mount하는 `SummernoteCore`; dual-format attw/publint clean 확인.
-6. **thin 수직 슬라이스**: client-only `<Summernote>` 렌더, 타이핑·bold/italic 토글·getHTML round-trip 단언; `vitest.workspace.ts`(unit-node+browser+react) 와이어.
-7. **Phase-0 IME smoke 스위트**: 스크립트된 한글 compositionstart/update/end, dup/drop 0 단언 — 최고 리스크 표면을 아키텍처 확정 전에 front-load.
-8. `parity-runner.spec.ts` + `normalize.ts`(안정 attr 순서, PM-fill `<p><br></p>` 규칙, lowercase tag) stub을 최소 슬라이스에 돌려 oracle→replay→정규화 동일성 루프를 코퍼스 확대 전 증명.
+## 10. 첫 2주 (즉시 착수)
+- **Day 1-2**: Yarn workspaces(Node≥17, jquery/bootstrap/less/mocha 런타임 의존 제거), `@summernote/core`·`react` stub(Vite lib es+cjs + vite-plugin-dts로 ESM+CJS+.d.ts 증명), tsconfig.base + project references.
+- **Day 2-3**: `vitest.config.js`→`.ts`(browser mode 보존, `@summernote/*`를 **TS 소스**에 별칭 — dist 아님), `test/util.ts`(h/mount/dispatchKey/Input/Paste/Composition), `test/setup.ts`(`equalsIgnoreCase` IE 분기 제거, `equalsStyle` jQuery-free 재구현).
+- **Day 3-5**: 골든 코퍼스 recorder를 **태그된 레거시 빌드**에 대해 구축. `test/matrix.ts`(initialHTML × command/keystroke × options) — Editor/Buttons/Codeview/LinkDialog/VideoDialog/HintPopover/Context spec + **인라인 토글/justify/color/backColor/unlink/formatBlock의 부분·중첩·혼합 선택 엣지케이스**. 출력(editable.innerHTML, Style.current, codeview.sync, history snapshot, code()) → `test/golden/*.json` 동결 + freeze-guard.
+- **Day 5-6**: CI — ESLint `no-restricted-imports(jquery)`/`no-restricted-syntax($)`(editor 패키지 한정), `check-no-jquery.sh`, zero-third-party-editor-dep 가드. 필수 PR 체크(Tier-1/2/3 실 Chrome).
+- **Day 6-9**: `core/func·lists·env·key.ts` 이식(`$` 제거; `rect2bnd` 네이티브 scroll 수학 + ac5460e0 guard; `$.inArray`→`includes`; IE `inputEventName`은 `isMSIE` 뒤 격리). `core/dom.ts` 1:1(멤버명 전부, classList/createElement/forEach + parseHTML/closest). `test/base/core/{dom,func,lists,key}.spec.js`→`.spec.ts` 그대로 이식 green.
+- **Day 9-12**: `core/range.ts` 1:1(`WrappedRange` 클래스 `sc/so/ec/eo`+`normalize()` verbatim; IE TextRange는 `isW3CRangeSupport` 뒤 격리; `pasteHTML` reversed-insert + setEnd guard 9a9e01d3 verbatim). `async.ts`(Deferred→Promise) + 최소 EventBus. `range.spec`→`.ts` 이식 + WrappedRange 필드/bookmark round-trip anchor.
+- **Day 12-14**: Phase-1 thin slice — 최소 `EditorCore`(editable seed, History, `Style.current` bold-state, **자체 명령**으로 inline-toggle + insertText through before/afterCommand, 네이티브 이벤트 바인딩 + composition 가드). `useSummernote()` + 최소 `<SummernoteEditor>`(uncontrolled `.note-editable`, React children 0, `useSyncExternalStore`, bold 버튼 1). Tier-3(reconciler-exclusion, StrictMode 멱등, IME undo, no-clobber). **v0.1 게이트.**
 
-## 9. 사용자 비준 필요 결정 (착수 전)
+## 11. 비준된 결정 + 의도적 divergence (release-note 대상)
+- ✅ **Lens C 전면 TS 재구조화**(타입드 command + EventBus). ✅ **execCommand v1 완전 제거**(자체 Range 명령) — 인라인-포맷 마크업은 **결정적**(레거시 비결정적 execCommand 출력과 다름, 의도적 개선). ✅ **per-instance theme**(전역 `$.summernote.ui` 폐기). ✅ **콜백이 editable 요소를 명시적으로 받음**(`this`=raw-DOM 폐기). ✅ **Bootstrap JS 제거**(lite 동작으로 통일). ✅ **레거시 IE 미지원**(Chrome-only 패리티 게이트, TextRange 격리). ✅ **controlled 계약**: `value`/`onChange`만 controlled, 외부·non-self-origin value 변경시에만 setHTML(caret 보호).
+- 마이그레이션: 기존 UMD 플러그인은 `definePlugin` 타입드 API로 이전(전역 `$.summernote.dom/ui`→per-instance import). 가이드 제공.
 
-1. **ProseMirror 채택 vs from-scratch vs Lexical** — 권고: **ProseMirror**(from-scratch는 전 제안 기각; tables가 결정타). *“문서 모델 재구축”을 ProseMirror 기반으로 해석함 — 자체 엔진을 원했다면 재논의 필요.*
-2. **`code()` 바이트 패리티가 v1 hard 요구인가, 정규화/의미 동일성으로 충분한가** — 이 답이 노력을 크게 좌우(바이트 = 커스텀 serializer + 골든 코퍼스 강제 / 의미 = 완화). 권고: 마크 모델은 range-marks, 바이트는 serializer에 pin.
-3. **`code()` fidelity 정책**: permissive schema + `raw_html` passthrough(로드 시 조용한 청소 방지). 로드 시 일부 정규화 허용 여부 비준.
-4. **React 경계**: React=chrome only, PM=editable opaque leaf, image/video/table chrome은 PM NodeView 안 React. React가 editable contentEditable을 절대 렌더 안 함 비준.
-5. **플러그인 호환**: 기존 UMD `$.summernote.plugins`는 무수정 미동작. 새 plugin 계약 + compat shim/migration guide의 v1 범위 여부 비준.
-6. **테마 아키텍처**: per-instance React context(전역 `$.summernote.ui` 싱글톤 폐기). multi-editor 깨짐 수정하나 테마가 ui_template 팩토리가 아닌 React 컴포넌트셋이 됨 — 이 break 비준.
-7. **의존 자세**: prosemirror-* published pin 소비(~10 패키지) vs 유지보수 자율성. Tiptap 비채택 비준.
-
-## 10. 미해결 질문 (설계 진행하며 해소)
-- byte-for-byte `code()` 패리티가 hard 요구인가? (노력 최대 레버)
-- v1이 기존 커뮤니티 UMD 플러그인을 무수정 실행해야 하나, 문서화된 마이그레이션으로 충분한가?
-- 실제 소비자가 블록에 넣는 inline CSS가 얼마나 임의적인가? (text-align/line-height/margin-left 넘어서면 node-attr 확장 또는 raw_html 필요)
-- Air mode 완전 패리티가 v1 범위인가? coordsAtPos 팝오버 위치 타이밍이 현 UX와 맞는가?
-- Codeview 에디터: CodeMirror 유지(현재)하고 PM view와 swap + close 시 re-parse — flush-on-read/onChangeCodeview 시맨틱 정확 일치 확인.
-- controlled-value 정규화 동일성의 canonical normal form(공백 차이로 인한 cursor-jump 방지)?
-- SSR 범위: 정적 HTML placeholder + client-only mount로 충분한가, Node-side 모델 직렬화가 필요한가?
-- i18n: 50+ 로케일이 React chrome label + command/help 텍스트를 구동 — 타입드 TS 모듈 이관 + exact-key 로드(no partial match, en-US fallback) 확인.
+## 12. 미해결 질문 (착수 직후 spike로 해소)
+- 기존 `test/base/` Vitest가 execCommand **산출 마크업**(`<b>` vs `<span style>`)에 단언하는가? → 인라인-포맷 골든을 결정적 재기준선으로 잡고, 회귀 게이트로 먼저 이식해야 함(범위 확인/예산).
+- `getComputedStyle` vs jQuery `.css()` 정규화 차이(font-size px, font-family 인용)가 툴바 'checked' 상태에 미치는 영향 → dom/range 변환 커밋 전 `equalsStyle` spike.
+- `History` innerHTML-per-undo 메모리 프로파일이 v1 허용인가(대용량 문서)? 권고: v1 verbatim, post-v1 재검토.
+- Deferred→Promise 다이얼로그 상태머신(reject-on-hidden-while-pending) — 명시적 settled 플래그 + exactly-once resolve/reject 테스트.
 
 ---
-*이 계획서는 13개 설계 에이전트(코어 3제안 + 심사 + 서브시스템 8 + 로드맵)의 종합 산출물이다. 현 코드베이스 지도는 루트 [CLAUDE.md](../CLAUDE.md).*
+*본 계획서는 13개 설계 에이전트(엔진-이식 3제안 + 심사 + 서브시스템 8 + 로드맵)의 종합이며, 사용자 결정(자체 엔진·외부 의존 0·전면 TS화·execCommand v1 제거)을 반영해 조정했다. 현 코드베이스 지도는 루트 [CLAUDE.md](../CLAUDE.md).*

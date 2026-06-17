@@ -6,71 +6,120 @@ const GROUPS = EXAMPLES.reduce<Record<string, Example[]>>((acc, ex) => {
   return acc;
 }, {});
 
+const isWide = (): boolean => typeof window !== 'undefined' && window.innerWidth >= 1040;
+
 export function App(): JSX.Element {
-  const [activeId, setActiveId] = useState(EXAMPLES[0].id);
   const [dark, setDark] = useState(false);
-  const active = EXAMPLES.find((e) => e.id === activeId) ?? EXAMPLES[0];
+  const [open, setOpen] = useState(isWide);
+  const [activeId, setActiveId] = useState(EXAMPLES[0].id);
 
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
   }, [dark]);
 
+  // scroll-spy: highlight the section currently in view in the bookmark menu
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) setActiveId(entry.target.id);
+        }
+      },
+      { rootMargin: '-15% 0px -75% 0px' },
+    );
+    for (const ex of EXAMPLES) {
+      const el = document.getElementById(ex.id);
+      if (el) observer.observe(el);
+    }
+    return () => observer.disconnect();
+  }, []);
+
+  const closeOnNarrow = (): void => {
+    if (!isWide()) setOpen(false);
+  };
+
   return (
-    <div className="app">
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-logo">✦</div>
+    <div className="page">
+      <header className="hero">
+        <div className="hero-brand">
+          <span className="brand-logo">✦</span>
           <div>
             <div className="brand-name">summernote&#8209;react</div>
             <div className="brand-sub">@eaeao · v1.0</div>
           </div>
         </div>
-        <nav className="nav">
-          {Object.entries(GROUPS).map(([group, items]) => (
-            <div key={group}>
-              <div className="nav-group">{group}</div>
-              {items.map((ex) => (
-                <button
-                  key={ex.id}
-                  className={`nav-item${ex.id === activeId ? ' active' : ''}`}
-                  onClick={() => setActiveId(ex.id)}
-                >
-                  <span className="emoji">{ex.emoji}</span>
-                  {ex.title}
-                </button>
-              ))}
-            </div>
-          ))}
-        </nav>
-      </aside>
-
-      <div className="main">
-        <div className="topbar">
+        <h1 className="hero-title">
+          React summernote, <span className="grad">reimagined</span>.
+        </h1>
+        <p className="hero-tag">
+          A TypeScript port on summernote&apos;s own engine — <b>zero runtime deps</b>, no jQuery, no{' '}
+          <code>execCommand</code>. The editor engine and the React bindings in one package.
+        </p>
+        <div className="hero-actions">
           <span className="pill">npm i @eaeao/summernote-react</span>
-          <span className="spacer" />
-          <a className="iconbtn" href="https://www.npmjs.com/package/@eaeao/summernote-react" title="npm" target="_blank" rel="noreferrer">
-            📦
+          <a className="btn" href="https://www.npmjs.com/package/@eaeao/summernote-react" target="_blank" rel="noreferrer">
+            npm ↗
           </a>
-          <a className="iconbtn" href="https://github.com/eaeao/summernote-react" title="GitHub" target="_blank" rel="noreferrer">
-            🐙
+          <a className="btn" href="https://github.com/eaeao/summernote-react" target="_blank" rel="noreferrer">
+            GitHub ↗
           </a>
-          <button className="iconbtn" onClick={() => setDark((d) => !d)} title="Toggle light / dark" aria-label="Toggle theme">
+        </div>
+      </header>
+
+      <main className="sections">
+        {EXAMPLES.map((ex) => (
+          <section key={ex.id} id={ex.id} className="ex-section">
+            <div className="ex-head">
+              <h1>
+                <a className="anchor" href={`#${ex.id}`} aria-label={`Link to ${ex.title}`}>
+                  #
+                </a>
+                {ex.emoji} {ex.title}
+              </h1>
+              <p>{ex.blurb}</p>
+            </div>
+            <ex.Component />
+          </section>
+        ))}
+      </main>
+
+      <footer className="foot">
+        MIT · a port of <a href="https://summernote.org">summernote</a> ·{' '}
+        <code>@eaeao/summernote-react</code>
+      </footer>
+
+      {/* floating bookmark menu — fixed top-right, follows the scroll */}
+      <nav className={`bookmark${open ? ' open' : ''}`}>
+        <div className="bookmark-bar">
+          <span className="bookmark-heading">📑 Examples</span>
+          <button className="iconbtn sm" onClick={() => setDark((d) => !d)} title="Toggle light / dark" aria-label="Toggle theme">
             {dark ? '☀️' : '🌙'}
           </button>
+          <button className="iconbtn sm" onClick={() => setOpen((o) => !o)} aria-label="Toggle examples menu">
+            {open ? '×' : '≡'}
+          </button>
         </div>
-
-        <main className="content">
-          <div className="ex-head">
-            <h1>
-              {active.emoji} {active.title}
-            </h1>
-            <p>{active.blurb}</p>
+        {open ? (
+          <div className="bookmark-list">
+            {Object.entries(GROUPS).map(([group, items]) => (
+              <div key={group}>
+                <div className="bookmark-group">{group}</div>
+                {items.map((ex) => (
+                  <a
+                    key={ex.id}
+                    href={`#${ex.id}`}
+                    className={`bookmark-link${ex.id === activeId ? ' active' : ''}`}
+                    onClick={closeOnNarrow}
+                  >
+                    <span className="emoji">{ex.emoji}</span>
+                    {ex.title}
+                  </a>
+                ))}
+              </div>
+            ))}
           </div>
-          <div key={active.id}>
-            <active.Component />
-          </div>
-        </main>
-      </div>
+        ) : null}
+      </nav>
     </div>
   );
 }

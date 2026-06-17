@@ -205,7 +205,12 @@ function keyName(e: KeyboardEvent): string | null {
 /** build the keyMap lookup string ('CTRL+SHIFT+S') for a modifier combo; null if no modifier. */
 function shortcutName(e: KeyboardEvent): string | null {
   if (!(e.ctrlKey || e.metaKey || e.altKey)) {
-    return null; // plain keys (incl. ENTER/TAB/ESC) stay native
+    // TAB / SHIFT+TAB are intercepted (table-cell navigation / indent); other plain keys
+    // (ENTER/ESC) stay native so the browser handles paragraph breaks etc.
+    if (e.key === 'Tab') {
+      return e.shiftKey ? 'SHIFT+TAB' : 'TAB';
+    }
+    return null;
   }
   const k = keyName(e);
   if (!k) {
@@ -249,6 +254,9 @@ function selectRange(range: Range): void {
 const style = new Style();
 const bullet = new Bullet();
 const table = new Table();
+
+// NBSP run length inserted by Tab when the caret is not in a table cell (summernote default).
+const TAB_SIZE = 4;
 
 /** run a table command on the current selection's WrappedRange (which must be inside a cell). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -581,6 +589,32 @@ const COMMANDS: Record<string, Command> = {
   deleteRow: (): boolean => tableCmd((rng) => table.deleteRow(rng)),
   deleteCol: (): boolean => tableCmd((rng) => table.deleteCol(rng)),
   deleteTable: (): boolean => tableCmd((rng) => table.deleteTable(rng)),
+
+  // --- tab / shift-tab: move between table cells when collapsed in a cell, else indent (NBSP run) ---
+  tab: (): boolean => {
+    const rng = wrappedRange.create();
+    if (!rng) {
+      return false;
+    }
+    if (rng.isCollapsed() && rng.isOnCell()) {
+      table.tab(rng, false); // next cell — selection move only, no DOM mutation / undo step
+      return false;
+    }
+    const tab = dom.createText(new Array(TAB_SIZE + 1).join(dom.NBSP_CHAR));
+    rng.deleteContents().insertNode(tab, true);
+    wrappedRange.create(tab, TAB_SIZE)!.select();
+    return true;
+  },
+  untab: (): boolean => {
+    const rng = wrappedRange.create();
+    if (!rng) {
+      return false;
+    }
+    if (rng.isCollapsed() && rng.isOnCell()) {
+      table.tab(rng, true); // previous cell
+    }
+    return false;
+  },
 
   // --- font / size / color / line-height (own inline-style commands, NO execCommand) ---
   fontName: (_core, ...args): boolean => applyInlineStyle('font-family', env.validFontName(String(args[0] ?? ''))),

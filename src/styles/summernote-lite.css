@@ -195,6 +195,20 @@
 .note-editable[contenteditable='false'] {
   background: #e5e5e5;
 }
+/* table guide lines — visible cell borders while editing (port of summernote's bordered table) */
+.note-editable table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10px;
+}
+.note-editable table td,
+.note-editable table th {
+  border: 1px solid #ccc;
+  padding: 5px 8px;
+  min-width: 24px;
+  height: 20px;
+  vertical-align: top;
+}
 .note-placeholder {
   position: absolute;
   top: 10px;

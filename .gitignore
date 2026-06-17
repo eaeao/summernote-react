@@ -61,3 +61,6 @@ dist/
 
 # vitest browser-mode artifacts
 __screenshots__/
+
+# Playwright MCP artifacts (snapshots / console logs)
+.playwright-mcp/

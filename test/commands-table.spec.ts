@@ -56,6 +56,52 @@ describe('table commands (own Table engine, multi-engine)', () => {
     core.destroy();
   });
 
+  function currentCellText(): string | null {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return null;
+    let n: Node | null = sel.getRangeAt(0).startContainer;
+    while (n && n.nodeName !== 'TD' && n.nodeName !== 'TH') n = n.parentNode;
+    return n ? n.textContent : null;
+  }
+
+  it('tab moves the caret to the next cell', () => {
+    const el = mount('<div></div>');
+    const core = createEditorCore(el, {
+      value: '<table class="table"><tbody><tr><td>a</td><td>b</td></tr><tr><td>c</td><td>d</td></tr></tbody></table>',
+    });
+    caretAt((el.querySelectorAll('td')[0] as HTMLElement).firstChild as Node, 0);
+
+    core.command('tab');
+
+    expect(currentCellText()).toBe('b');
+    core.destroy();
+  });
+
+  it('shift-tab (untab) moves the caret to the previous cell', () => {
+    const el = mount('<div></div>');
+    const core = createEditorCore(el, {
+      value: '<table class="table"><tbody><tr><td>a</td><td>b</td></tr></tbody></table>',
+    });
+    caretAt((el.querySelectorAll('td')[1] as HTMLElement).firstChild as Node, 0);
+
+    core.command('untab');
+
+    expect(currentCellText()).toBe('a');
+    core.destroy();
+  });
+
+  it('tab outside a table inserts an indent run instead of escaping the editor', () => {
+    const el = mount('<div></div>');
+    const core = createEditorCore(el, { value: '<p>x</p>' });
+    caretAt((el.querySelector('p') as HTMLElement).firstChild as Node, 1);
+
+    core.command('tab');
+
+    const text = (el.querySelector('p') as HTMLElement).textContent ?? '';
+    expect(text).toBe('x' + String.fromCharCode(160).repeat(4));
+    core.destroy();
+  });
+
   it('deleteTable removes the table', () => {
     const el = mount('<div></div>');
     const core = createEditorCore(el, {

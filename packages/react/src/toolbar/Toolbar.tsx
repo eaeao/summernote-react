@@ -1,57 +1,33 @@
-import type { EditorCore, EditorState } from '@summernote/core';
-import { BUTTONS, DEFAULT_TOOLBAR, type ButtonSpec, type ToolbarGroup } from './buttons';
+import type { ReactNode } from 'react';
+import type { ToolbarGroup } from '@summernote/core';
+import { useChrome } from '../chrome/ChromeContext';
+import { ToolbarItem, isKnownItem } from './registry';
 
 export interface ToolbarProps {
-  /** the live engine (null until mounted); clicks no-op while null. */
-  core: EditorCore | null;
-  /** published active-state that drives pressed/disabled. */
-  state: EditorState;
-  /** `[group, buttonKeys]` config; defaults to every wired command. */
+  /** `[group, names]` config; defaults to the editor's options.toolbar. */
   config?: readonly ToolbarGroup[];
-}
-
-function ToolbarButton({
-  spec,
-  core,
-  state,
-}: {
-  spec: ButtonSpec;
-  core: EditorCore | null;
-  state: EditorState;
-}): JSX.Element {
-  const active = spec.isActive ? spec.isActive(state) : false;
-  const disabled = spec.isDisabled ? spec.isDisabled(state) : false;
-  return (
-    <button
-      type="button"
-      className={`note-btn note-btn-${spec.key}${active ? ' active' : ''}`}
-      title={spec.title}
-      aria-label={spec.title}
-      aria-pressed={spec.isActive ? active : undefined}
-      disabled={disabled}
-      // keep the selection: a toolbar mousedown must not blur the editable
-      onMouseDown={(e) => e.preventDefault()}
-      onClick={() => core?.command(spec.command)}
-    >
-      <i className={spec.icon} aria-hidden="true" />
-    </button>
-  );
+  /** render an unknown button name (plugin/custom buttons); return null to skip. */
+  renderCustom?: (name: string) => ReactNode;
 }
 
 /**
- * Renders the toolbar from a `[group, buttonKeys]` config. Stateless and fully driven by the
- * published EditorState — chrome re-renders here never touch the engine-owned editable subtree.
- * Preserves summernote's `.note-toolbar` / `.note-btn-group` / `.note-btn` class contract.
+ * Renders the toolbar from a `[group, names]` config (summernote's options.toolbar shape) via the
+ * item registry. Stateless and fully driven by the published EditorState through ChromeContext —
+ * chrome re-renders never touch the engine-owned editable subtree. Preserves the .note-toolbar /
+ * .note-btn-group / .note-btn / note-icon-* class contract.
  */
-export function Toolbar({ core, state, config = DEFAULT_TOOLBAR }: ToolbarProps): JSX.Element {
+export function Toolbar({ config, renderCustom }: ToolbarProps): JSX.Element {
+  const { options } = useChrome();
+  const groups = config ?? options.toolbar;
   return (
-    <div className="note-toolbar" role="toolbar">
-      {config.map(([group, keys]) => (
+    <div className="note-toolbar note-btn-toolbar" role="toolbar">
+      {groups.map(([group, names]) => (
         <div key={group} className={`note-btn-group note-${group}`}>
-          {keys.map((key) => {
-            const spec = BUTTONS[key];
-            return spec ? <ToolbarButton key={key} spec={spec} core={core} state={state} /> : null;
-          })}
+          {names.map((name) =>
+            isKnownItem(name) ? <ToolbarItem key={name} name={name} /> : renderCustom ? (
+              <span key={name}>{renderCustom(name)}</span>
+            ) : null,
+          )}
         </div>
       ))}
     </div>

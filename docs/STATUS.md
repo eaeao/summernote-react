@@ -5,9 +5,10 @@
 
 ## 한눈에
 
-- 브랜치 `react-ts-port` (main에서 분기, **미푸시**) — 구현 커밋 20개.
-- **전체 456 테스트 green (chromium + webkit), typecheck strict 클린.**
+- 브랜치 `react-ts-port` (main에서 분기, **미푸시**) — 구현 커밋 35개.
+- **🎉 v0.5 달성 — 완전한 lite React 에디터 (레거시 lite 기능 패리티).** 26 spec 파일 전부 green (chromium + webkit), ~288 테스트(×2엔진=576 실행), typecheck strict 클린.
 - **외부 editor/runtime 의존 0, jQuery 0, `document.execCommand` 0.**
+- Phase 3b chrome 전체: 툴바 + 드롭다운(style/font/size/lineheight/para/color/table) · 다이얼로그(link/image/video/help) · 팝오버(link/image/table) + 이미지 리사이즈 handle · fullscreen/codeview/statusbar/placeholder · 키보드 단축키 · 플러그인 API + imperative handle. lite CSS(`@summernote/react/styles.css`).
 
 ## 실행법
 

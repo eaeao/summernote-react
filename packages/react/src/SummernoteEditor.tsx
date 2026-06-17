@@ -46,6 +46,9 @@ export function SummernoteEditor(props: SummernoteEditorProps): JSX.Element {
   const initial = value ?? defaultValue;
   const [html, setHtml] = useState<string>(initial ?? '');
 
+  // shortcut methods that aren't editing commands route here (read latest ui via a stable ref)
+  const shortcutRef = useRef<(method: string) => boolean>(() => false);
+
   const coreOptions: EditorCoreOptions = { ...(options ?? {}) };
   if (initial !== undefined) {
     coreOptions.value = initial;
@@ -55,6 +58,7 @@ export function SummernoteEditor(props: SummernoteEditorProps): JSX.Element {
     setHtml(next);
     onChange?.(next);
   };
+  coreOptions.onShortcut = (method: string): boolean => shortcutRef.current(method);
 
   const { editableRef, core, state } = useSummernote(coreOptions);
 
@@ -109,6 +113,15 @@ export function SummernoteEditor(props: SummernoteEditorProps): JSX.Element {
       },
     };
   }, [core, codeview, codeHtml]);
+
+  // route keyboard-shortcut methods that aren't editing commands to the chrome UI
+  shortcutRef.current = (method: string): boolean => {
+    if (method === 'linkDialog.show') {
+      ui.openLinkDialog?.();
+      return true;
+    }
+    return false;
+  };
 
   const chrome = useMemo<ChromeValue>(
     () => ({ core, state, lang: langEnUS, options: chromeOptions, ui, codeviewActive: codeview }),

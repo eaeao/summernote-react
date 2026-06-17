@@ -17,6 +17,7 @@ import dom from './core/dom';
 import wrappedRange from './core/range';
 import env from './core/env';
 import { createVideoNode } from './media/video';
+import { defaultOptions, type KeyMap } from './options';
 import { History } from './editing/History';
 import { Style } from './editing/Style';
 import { Bullet } from './editing/Bullet';
@@ -69,6 +70,15 @@ export interface EditorCoreOptions {
   onChange?: (html: string) => void;
   /** undo-stack depth (default 200). */
   historyLimit?: number;
+  /** enable keyboard shortcuts (default true). */
+  shortcuts?: boolean;
+  /** shortcut map (default the ported pc/mac keyMap). */
+  keyMap?: KeyMap;
+  /** use the mac keyMap (default env.isMac). */
+  isMac?: boolean;
+  /** fired for a shortcut whose method is NOT an editing command (e.g. 'linkDialog.show');
+   * return true if handled (the engine then preventDefaults). */
+  onShortcut?: (method: string) => boolean;
 }
 
 type Listener = () => void;
@@ -155,6 +165,61 @@ function readStyle(cont: Element, para: HTMLElement | null): ValueStyle {
   }
 
   return { fontName, fontSize, fontSizeUnit, lineHeight };
+}
+
+/** name of the pressed key in keyMap terms (keyCode-based, matching the legacy key.js map). */
+function keyName(e: KeyboardEvent): string | null {
+  const code = e.keyCode;
+  if (code >= 48 && code <= 57) {
+    return 'NUM' + (code - 48); // digit row: NUM0..NUM9 (works with SHIFT, unlike e.key)
+  }
+  if (code >= 65 && code <= 90) {
+    return String.fromCharCode(code); // A-Z
+  }
+  switch (code) {
+    case 13:
+      return 'ENTER';
+    case 27:
+      return 'ESC';
+    case 9:
+      return 'TAB';
+    case 220:
+      return 'BACKSLASH';
+    case 191:
+      return 'SLASH';
+    case 219:
+      return 'LEFTBRACKET';
+    case 221:
+      return 'RIGHTBRACKET';
+    default:
+      return null;
+  }
+}
+
+/** build the keyMap lookup string ('CTRL+SHIFT+S') for a modifier combo; null if no modifier. */
+function shortcutName(e: KeyboardEvent): string | null {
+  if (!(e.ctrlKey || e.metaKey || e.altKey)) {
+    return null; // plain keys (incl. ENTER/TAB/ESC) stay native
+  }
+  const k = keyName(e);
+  if (!k) {
+    return null;
+  }
+  const parts: string[] = [];
+  if (e.ctrlKey) {
+    parts.push('CTRL');
+  }
+  if (e.metaKey) {
+    parts.push('CMD');
+  }
+  if (e.altKey) {
+    parts.push('ALT');
+  }
+  if (e.shiftKey) {
+    parts.push('SHIFT');
+  }
+  parts.push(k);
+  return parts.join('+');
 }
 
 function currentRange(): Range | null {
@@ -835,18 +900,47 @@ export class EditorCore {
     const onSelectionChange = (): void => {
       this.notifyState();
     };
+    const onKeyDown = (e: KeyboardEvent): void => this.handleShortcut(e);
 
     this.editable.addEventListener('compositionstart', onCompositionStart);
     this.editable.addEventListener('compositionend', onCompositionEnd);
     this.editable.addEventListener('input', onInput);
+    this.editable.addEventListener('keydown', onKeyDown);
     document.addEventListener('selectionchange', onSelectionChange);
 
     this.cleanups.push(
       () => this.editable.removeEventListener('compositionstart', onCompositionStart),
       () => this.editable.removeEventListener('compositionend', onCompositionEnd),
       () => this.editable.removeEventListener('input', onInput),
+      () => this.editable.removeEventListener('keydown', onKeyDown),
       () => document.removeEventListener('selectionchange', onSelectionChange),
     );
+  }
+
+  /** map a keydown to a keyMap command (hardware shortcuts only; IME keydowns are ignored). */
+  private handleShortcut(e: KeyboardEvent): void {
+    if (this.options.shortcuts === false) {
+      return;
+    }
+    if (e.isComposing || e.keyCode === 229) {
+      return; // mid-composition (Android fires keyCode 229 for almost every key — §13.2)
+    }
+    const name = shortcutName(e);
+    if (!name) {
+      return;
+    }
+    const isMac = this.options.isMac ?? env.isMac;
+    const map = (this.options.keyMap ?? defaultOptions.keyMap)[isMac ? 'mac' : 'pc'];
+    const method = map[name];
+    if (!method) {
+      return;
+    }
+    if (COMMANDS[method]) {
+      e.preventDefault();
+      this.command(method);
+    } else if (this.options.onShortcut && this.options.onShortcut(method)) {
+      e.preventDefault(); // chrome handled it (e.g. linkDialog.show)
+    }
   }
 
   destroy(): void {

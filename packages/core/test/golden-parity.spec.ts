@@ -78,4 +78,15 @@ describe('golden parity (multi-engine, own-commands vs legacy oracle)', () => {
       core.destroy();
     });
   }
+
+  // code() round-trip: seeding the editor with the legacy HTML must read back unchanged.
+  const roundtripCases = golden.records.filter((r) => r.action === null);
+  for (const rec of roundtripCases) {
+    it(`round-trips ${rec.name}`, () => {
+      const el = mount('<div></div>');
+      const core = createEditorCore(el, { value: rec.initialHTML });
+      expect(core.getHTML()).equalsIgnoreCase(rec.resultHTML);
+      core.destroy();
+    });
+  }
 });

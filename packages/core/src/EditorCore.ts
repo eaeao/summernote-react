@@ -14,6 +14,7 @@
  * the bookmark-accurate History) replaces the stubs here in Phase 2.
  */
 import dom from './core/dom';
+import { History } from './editing/History';
 
 export interface EditorState {
   readonly bold: boolean;
@@ -26,6 +27,8 @@ export interface EditorCoreOptions {
   value?: string;
   /** fired after content changes (the code() onChange contract, minimal). */
   onChange?: (html: string) => void;
+  /** undo-stack depth (default 200). */
+  historyLimit?: number;
 }
 
 type Listener = () => void;
@@ -111,8 +114,7 @@ const COMMANDS: Record<string, Command> = {
 export class EditorCore {
   readonly editable: HTMLElement;
   private readonly options: EditorCoreOptions;
-  private readonly stack: string[] = [];
-  private offset = -1;
+  private readonly history: History;
   private composing = false;
   private compositionEndedAt = 0;
   private settleTimer: ReturnType<typeof setTimeout> | null = null;
@@ -126,7 +128,8 @@ export class EditorCore {
     editable.setAttribute('contenteditable', 'true');
     const seed = options.value && options.value.trim() !== '' ? options.value : EMPTY_PARA;
     editable.innerHTML = seed;
-    this.pushUndo();
+    this.history = new History(editable, { historyLimit: options.historyLimit ?? 200 });
+    this.history.recordUndo();
     this.snapshot = this.computeState();
     this.bind();
   }
@@ -177,31 +180,22 @@ export class EditorCore {
     return this.snapshot;
   }
 
-  // --- history ---
-  private pushUndo(): void {
-    // drop any redo tail, then push the current html
-    this.stack.splice(this.offset + 1);
-    this.stack.push(this.getHTML());
-    this.offset = this.stack.length - 1;
-  }
-
+  // --- history (faithful ported History: innerHTML + bookmark selection restore) ---
   undo(): boolean {
-    if (this.offset <= 0) {
+    if (!this.history.canUndo()) {
       return false;
     }
-    this.offset -= 1;
-    this.editable.innerHTML = this.stack[this.offset];
+    this.history.undo();
     this.notifyState();
     this.fireChange();
     return true;
   }
 
   redo(): boolean {
-    if (this.offset >= this.stack.length - 1) {
+    if (!this.history.canRedo()) {
       return false;
     }
-    this.offset += 1;
-    this.editable.innerHTML = this.stack[this.offset];
+    this.history.redo();
     this.notifyState();
     this.fireChange();
     return true;
@@ -213,7 +207,7 @@ export class EditorCore {
   }
 
   private afterCommand(): void {
-    this.pushUndo();
+    this.history.recordUndo();
     this.notifyState();
     this.fireChange();
   }
@@ -231,8 +225,8 @@ export class EditorCore {
         : false;
     return {
       bold,
-      canUndo: this.offset > 0,
-      canRedo: this.offset < this.stack.length - 1,
+      canUndo: this.history.canUndo(),
+      canRedo: this.history.canRedo(),
       isComposing: this.composing,
     };
   }

@@ -127,6 +127,14 @@ export class History {
     }
   }
 
+  canUndo(): boolean {
+    return this.stackOffset > 0;
+  }
+
+  canRedo(): boolean {
+    return this.stack.length - 1 > this.stackOffset;
+  }
+
   /**
    * recorded undo
    */

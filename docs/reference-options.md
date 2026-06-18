@@ -285,6 +285,32 @@ import '@eaeao/summernote-react/themes/bs5.css'; // optional: Bootstrap-5 skin
 
 ---
 
+## Dark mode
+
+The `colorScheme` prop puts the editor into dark mode — `'light'` (default), `'dark'`, or `'auto'` (follows the OS `prefers-color-scheme`). It adds a `note-dark` class to the editor root; because every chrome surface (toolbar, dropdowns, dialogs, popovers, code view) renders inside that root, the dark theme cascades to all of them.
+
+```tsx
+<SummernoteEditor colorScheme="dark" />
+<SummernoteEditor colorScheme="auto" />   // matches the OS prefers-color-scheme
+```
+
+The lite skin defines its colors as CSS variables on `.note-editor`, so you can also retheme the editor yourself — override any variable, scoped to your own class or to `.note-dark`:
+
+```css
+.note-editor.note-dark {
+  --note-bg: #11131a;          /* editable + dropdown/dialog/popover surfaces */
+  --note-bg-toolbar: #181b22;  /* toolbar + statusbar */
+  --note-text: #e8eaf0;        /* editable text */
+  --note-primary: #6d5efc;     /* primary (e.g. dialog submit) button */
+  /* also: --note-bg-btn(-hover/-active), --note-border(-btn/-muted), --note-muted,
+     --note-input-bg, --note-codable-bg / --note-codable-text, --note-shadow, … */
+}
+```
+
+> bs3/bs4/bs5 don't ship their own dark palette — they follow your app's Bootstrap theme (e.g. Bootstrap 5's `data-bs-theme="dark"`). Dark mode's own styling is implemented for the default **lite** skin.
+
+---
+
 ## Internationalization (i18n)
 
 The `lang` prop accepts a `LangPartial` deep-merged over en-US. Missing keys fall back to English via `resolveLang`. The default (no `lang`) is `langEnUS`.

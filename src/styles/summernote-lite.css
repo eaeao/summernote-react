@@ -2,18 +2,76 @@
  * summernote-lite — baseline structural styles for the React chrome.
  *
  * Ported from the legacy lite SCSS (layout/visibility essentials). The icon GLYPHS require the
- * shared note-icon-* webfont (vendored in ./fonts) which a
- * consumer loads separately; dropdowns degrade to text without it. The full pixel-faithful SCSS +
- * the 4-theme visual gate are Phase 4. Import this once: `import '@eaeao/summernote-react/styles.css'`.
+ * shared note-icon-* webfont (vendored in ./fonts) which a consumer loads separately; dropdowns
+ * degrade to text without it. Import this once: `import '@eaeao/summernote-react/styles.css'`.
+ *
+ * Dark mode: all colors are CSS variables on `.note-editor` (light defaults below). The
+ * `<SummernoteEditor colorScheme="dark|auto">` prop adds a `.note-dark` class to the root, whose
+ * overrides cascade to every chrome surface (toolbar, dropdowns, dialogs, popovers, codeview) since
+ * they all render inside the editor subtree. Override any variable yourself to theme the editor.
+ * (bs3/bs4/bs5 skins follow your app's Bootstrap theme, e.g. `data-bs-theme`.)
  */
 
 .note-editor {
   position: relative;
+  color: var(--note-text-ui);
+
+  --note-bg: #ffffff;
+  --note-bg-toolbar: #f5f5f5;
+  --note-bg-btn: #ffffff;
+  --note-bg-btn-hover: #ebebeb;
+  --note-bg-btn-active: #e2e6ea;
+  --note-bg-readonly: #e5e5e5;
+  --note-text: #000000;
+  --note-text-ui: #333333;
+  --note-muted: #999999;
+  --note-disabled: #bbbbbb;
+  --note-border: #e2e2e2;
+  --note-border-btn: #dae0e5;
+  --note-border-muted: #cccccc;
+  --note-input-bg: #ffffff;
+  --note-shadow: rgba(0, 0, 0, 0.2);
+  --note-backdrop: rgba(0, 0, 0, 0.4);
+  --note-primary: #1a73e8;
+  --note-primary-text: #ffffff;
+  --note-codable-bg: #222222;
+  --note-codable-text: #cccccc;
+  --note-resize-bar: #a9a9a9;
+  --note-spinner-track: rgba(0, 0, 0, 0.12);
+  --note-spinner-head: rgba(0, 0, 0, 0.5);
 }
+
+/* dark mode — a tasteful slate palette; cascades to every chrome surface inside the editor */
+.note-editor.note-dark {
+  --note-bg: #1b1d23;
+  --note-bg-toolbar: #23262e;
+  --note-bg-btn: #2a2d37;
+  --note-bg-btn-hover: #343845;
+  --note-bg-btn-active: #3e4350;
+  --note-bg-readonly: #16171c;
+  --note-text: #e6e8ee;
+  --note-text-ui: #d2d6df;
+  --note-muted: #8b90a0;
+  --note-disabled: #5b6070;
+  --note-border: #343845;
+  --note-border-btn: #3a3e4b;
+  --note-border-muted: #3a3e4b;
+  --note-input-bg: #2a2d37;
+  --note-shadow: rgba(0, 0, 0, 0.55);
+  --note-backdrop: rgba(0, 0, 0, 0.6);
+  --note-primary: #4c8dff;
+  --note-primary-text: #ffffff;
+  --note-codable-bg: #15161b;
+  --note-codable-text: #c9d1d9;
+  --note-resize-bar: #6b7080;
+  --note-spinner-track: rgba(255, 255, 255, 0.18);
+  --note-spinner-head: rgba(255, 255, 255, 0.6);
+}
+
 .note-editor.note-frame {
-  border: 1px solid #e2e2e2;
+  border: 1px solid var(--note-border);
   border-radius: 4px;
-  background: #fff;
+  background: var(--note-bg);
 }
 .note-editor.fullscreen {
   position: fixed;
@@ -33,8 +91,8 @@
   flex-wrap: wrap;
   align-items: center;
   padding: 4px 0 4px 5px;
-  background: #f5f5f5;
-  border-bottom: 1px solid #e2e2e2;
+  background: var(--note-bg-toolbar);
+  border-bottom: 1px solid var(--note-border);
   border-radius: 4px 4px 0 0;
 }
 .note-btn-group {
@@ -50,10 +108,10 @@
   margin: 0;
   font-size: 14px;
   line-height: 1.4;
-  color: #333;
+  color: var(--note-text-ui);
   text-align: center;
-  background: #fff;
-  border: 1px solid #dae0e5;
+  background: var(--note-bg-btn);
+  border: 1px solid var(--note-border-btn);
   border-radius: 0;
   cursor: pointer;
 }
@@ -87,14 +145,14 @@
   border-radius: 3px;
 }
 .note-btn:hover {
-  background: #ebebeb;
+  background: var(--note-bg-btn-hover);
 }
 .note-btn.active {
-  background: #e2e6ea;
+  background: var(--note-bg-btn-active);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 .note-btn:disabled {
-  color: #bbb;
+  color: var(--note-disabled);
   cursor: not-allowed;
   opacity: 0.65;
 }
@@ -120,10 +178,10 @@
   overflow-y: auto;
   padding: 5px;
   margin-top: 2px;
-  background: #fff;
-  border: 1px solid #e2e2e2;
+  background: var(--note-bg);
+  border: 1px solid var(--note-border);
   border-radius: 4px;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 5px var(--note-shadow);
 }
 .note-dropdown-menu-right {
   left: auto;
@@ -139,7 +197,7 @@
   background: transparent;
 }
 .note-dropdown-menu .note-btn-block:hover {
-  background: #ebebeb;
+  background: var(--note-bg-btn-hover);
 }
 .note-dropdown-menu .note-btn-block.active,
 .note-dropdown-menu .note-btn-block.checked {
@@ -148,7 +206,7 @@
 .dropdown-style blockquote {
   margin: 0;
   padding-left: 8px;
-  border-left: 3px solid #ccc;
+  border-left: 3px solid var(--note-border-muted);
 }
 .dropdown-style pre {
   margin: 0;
@@ -174,7 +232,7 @@
   height: 18px;
   padding: 0;
   margin: 0;
-  border: 1px solid #fff;
+  border: 1px solid var(--note-bg);
   cursor: pointer;
 }
 .note-color-reset {
@@ -193,7 +251,7 @@
 .note-dimension-picker-cell {
   width: 18px;
   height: 18px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--note-border-muted);
   box-sizing: border-box;
 }
 .note-dimension-picker-cell.note-active {
@@ -215,11 +273,11 @@
   min-height: 100px;
   overflow: auto;
   outline: none;
-  color: #000;
-  background: #fff;
+  color: var(--note-text);
+  background: var(--note-bg);
 }
 .note-editable[contenteditable='false'] {
-  background: #e5e5e5;
+  background: var(--note-bg-readonly);
 }
 /* table guide lines — visible cell borders while editing (port of summernote's bordered table) */
 .note-editable table {
@@ -229,7 +287,7 @@
 }
 .note-editable table td,
 .note-editable table th {
-  border: 1px solid #ccc;
+  border: 1px solid var(--note-border-muted);
   padding: 5px 8px;
   min-width: 24px;
   height: 20px;
@@ -241,8 +299,8 @@
   width: 2.4em;
   height: 2.4em;
   box-sizing: border-box;
-  border: 3px solid rgba(0, 0, 0, 0.12);
-  border-top-color: rgba(0, 0, 0, 0.5);
+  border: 3px solid var(--note-spinner-track);
+  border-top-color: var(--note-spinner-head);
   border-radius: 50%;
   vertical-align: middle;
   animation: note-image-spin 0.7s linear infinite;
@@ -256,7 +314,7 @@
   position: absolute;
   top: 10px;
   left: 10px;
-  color: #999;
+  color: var(--note-muted);
   pointer-events: none;
 }
 .note-codable {
@@ -267,8 +325,8 @@
   margin: 0;
   font-family: Menlo, Monaco, monospace;
   font-size: 13px;
-  color: #ccc;
-  background: #222;
+  color: var(--note-codable-text);
+  background: var(--note-codable-bg);
   border: none;
   box-sizing: border-box;
   resize: vertical;
@@ -276,8 +334,8 @@
 
 /* statusbar */
 .note-statusbar {
-  background: #f5f5f5;
-  border-top: 1px solid #e2e2e2;
+  background: var(--note-bg-toolbar);
+  border-top: 1px solid var(--note-border);
   border-radius: 0 0 4px 4px;
 }
 .note-resizebar {
@@ -290,7 +348,7 @@
   width: 20px;
   height: 1px;
   margin: 1px auto;
-  border-top: 1px solid #a9a9a9;
+  border-top: 1px solid var(--note-resize-bar);
 }
 
 /* modal */
@@ -298,7 +356,7 @@
   position: fixed;
   inset: 0;
   z-index: 1040;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--note-backdrop);
 }
 .note-modal {
   position: fixed;
@@ -310,16 +368,16 @@
   max-width: 90vw;
 }
 .note-modal-content {
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.2);
+  background: var(--note-bg);
+  border: 1px solid var(--note-border);
   border-radius: 5px;
-  box-shadow: 0 3px 9px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 3px 9px var(--note-shadow);
 }
 .note-modal-header {
   display: flex;
   align-items: center;
   padding: 12px 15px;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid var(--note-border-muted);
 }
 .note-modal-title {
   margin: 0;
@@ -330,6 +388,7 @@
   order: 2;
   border: none;
   background: transparent;
+  color: inherit;
   font-size: 20px;
   cursor: pointer;
 }
@@ -339,7 +398,7 @@
 .note-modal-footer {
   padding: 12px 15px;
   text-align: right;
-  border-top: 1px solid #e5e5e5;
+  border-top: 1px solid var(--note-border-muted);
 }
 .note-form-group {
   margin-bottom: 12px;
@@ -353,13 +412,15 @@
   width: 100%;
   padding: 6px 8px;
   box-sizing: border-box;
-  border: 1px solid #ccc;
+  color: var(--note-text);
+  background: var(--note-input-bg);
+  border: 1px solid var(--note-border-muted);
   border-radius: 4px;
 }
 .note-btn-primary {
-  color: #fff;
-  background: #1a73e8;
-  border-color: #1a73e8;
+  color: var(--note-primary-text);
+  background: var(--note-primary);
+  border-color: var(--note-primary);
 }
 .note-shortcut-row {
   display: flex;
@@ -375,10 +436,10 @@
   position: absolute;
   z-index: 200;
   padding: 4px;
-  background: #fff;
-  border: 1px solid #e2e2e2;
+  background: var(--note-bg);
+  border: 1px solid var(--note-border);
   border-radius: 4px;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 5px var(--note-shadow);
   transform: translateY(-100%);
 }
 .note-popover-content {
@@ -393,7 +454,7 @@
   flex-wrap: wrap;
   max-width: 320px;
 }
-/* air toolbar below the selection (mobile, §13.3) — cancel the default above-translate */
+/* air toolbar below the selection (mobile) — cancel the default above-translate */
 .note-air-popover.note-air-below {
   transform: none;
 }

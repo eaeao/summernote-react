@@ -120,6 +120,30 @@ function Themes(): JSX.Element {
   );
 }
 
+const SCHEMES = ['light', 'dark', 'auto'] as const;
+function DarkMode(): JSX.Element {
+  const [scheme, setScheme] = useState<(typeof SCHEMES)[number]>('dark');
+  return (
+    <div className="stack">
+      <div className="card card-pad row">
+        <span className="muted">colorScheme</span>
+        {SCHEMES.map((c) => (
+          <button key={c} className={`btn${c === scheme ? ' btn-accent' : ''}`} onClick={() => setScheme(c)}>
+            {c}
+          </button>
+        ))}
+        <span className="muted">→ the whole editor themes from one class</span>
+      </div>
+      <EditorCard code={`<SummernoteEditor colorScheme="${scheme}" defaultValue="<p>…</p>" />`}>
+        <SummernoteEditor
+          colorScheme={scheme}
+          defaultValue={`<p>Dark mode via <b>colorScheme="${scheme}"</b>. Toolbar, dropdowns, dialogs, popovers, and the code view all follow it.</p><p>Open a <b>link</b> or <b>image</b> dialog, or the <b>code view</b>, to see the chrome theme too.</p>`}
+        />
+      </EditorCard>
+    </div>
+  );
+}
+
 const LOCALE_OPTIONS = ['en-US', ...localeCodes];
 function Localization(): JSX.Element {
   const [locale, setLocale] = useState('ko-KR');
@@ -391,6 +415,7 @@ export const EXAMPLES: Example[] = [
   { id: 'placeholder', emoji: '💬', title: 'Placeholder', group: 'Getting started', blurb: 'A placeholder shown over an empty editable.', Component: Placeholder },
   { id: 'air-mode', emoji: '✈️', title: 'Air mode', group: 'Features', blurb: 'No fixed toolbar — a floating toolbar appears at the selection (below it on touch).', Component: AirModeEx },
   { id: 'themes', emoji: '🎨', title: 'Themes', group: 'Features', blurb: 'lite / bs3 / bs4 / bs5 as CSS skins. Per-instance — editors with different themes coexist.', Component: Themes },
+  { id: 'dark-mode', emoji: '🌙', title: 'Dark mode', group: 'Features', blurb: 'colorScheme="light | dark | auto" themes the whole editor (toolbar, dialogs, popovers, code view) from one class.', Component: DarkMode },
   { id: 'localization', emoji: '🌐', title: 'Localization', group: 'Features', blurb: '46 bundled locales, deep-merged over en-US. Pass one via the lang prop.', Component: Localization },
   { id: 'insert-image', emoji: '🖼️', title: 'Image upload', group: 'Features', blurb: 'onImageUpload hook: send picked files to your uploader and insert the returned URL — or fall back to base64.', Component: ImageUpload },
   { id: 'multiple-editors', emoji: '🧩', title: 'Multiple editors', group: 'Recipes', blurb: 'Several independent editors on one page, each with its own theme and state.', Component: Multiple },
@@ -407,6 +432,7 @@ export const EXAMPLE_KO: Record<string, { title: string; blurb: string }> = {
   placeholder: { title: '플레이스홀더', blurb: '비어 있는 editable 위에 표시되는 플레이스홀더.' },
   'air-mode': { title: '에어 모드', blurb: '고정 툴바 없음 — 선택 위치에 떠 있는 툴바가 나타납니다(터치에서는 아래).' },
   themes: { title: '테마', blurb: 'lite / bs3 / bs4 / bs5를 CSS 스킨으로. 인스턴스별 — 서로 다른 테마가 공존합니다.' },
+  'dark-mode': { title: '다크 모드', blurb: 'colorScheme="light | dark | auto"로 에디터 전체(툴바·다이얼로그·팝오버·코드뷰)를 한 클래스로 테마링합니다.' },
   localization: { title: '현지화', blurb: '46개 번들 로케일, en-US 위에 deep-merge. lang prop으로 전달합니다.' },
   'insert-image': { title: '이미지 업로드', blurb: 'onImageUpload 훅: 선택한 파일을 업로더로 보내고 반환된 URL을 삽입 — 또는 base64로 폴백.' },
   'multiple-editors': { title: '다중 에디터', blurb: '한 페이지에 독립적인 여러 에디터, 각자 테마와 상태를 가집니다.' },

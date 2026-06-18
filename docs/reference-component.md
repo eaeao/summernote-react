@@ -22,6 +22,7 @@ Reference for the `<SummernoteEditor>` React component: its props, the imperativ
 | `airMode` | `boolean` | `false` | Air mode: no fixed toolbar/statusbar; a floating toolbar appears at the selection. Adds the `note-airframe` root class. |
 | `plugins` | `readonly SummernotePlugin[]` | — | Per-instance plugins. See [Plugin API](./reference-api.md#plugins--defineplugin). |
 | `theme` | `'lite' \| 'bs3' \| 'bs4' \| 'bs5'` | `'lite'` | Visual theme, **per-instance** — multiple editors with different themes coexist. Drives the `note-theme-${theme}` root class. See [Themes](./reference-options.md#themes). |
+| `colorScheme` | `'light' \| 'dark' \| 'auto'` | `'light'` | Dark mode. Adds `note-dark` to the root; the lite skin themes all chrome from CSS variables. `'auto'` follows the OS `prefers-color-scheme`. See [Dark mode](./reference-options.md#dark-mode). |
 | `lang` | `LangPartial` (= `Record<string, Record<string, string> \| undefined>`) | en-US | Locale, deep-merged over en-US via `resolveLang(lang)`. Use `lang={locales['ko-KR']}`. See [i18n](./reference-options.md#internationalization-i18n). |
 | `onImageUpload` | `ImageUploadHandler` (= `(file: File) => string \| Promise<string>`) | — | Image-upload hook. Called per picked file instead of base64-embedding; return/resolve the `src`. See [Callbacks](#callbacks--onchange-onimageupload). |
 | `className` | `string` | — | Extra class appended to the root `note-editor note-frame …` element. |

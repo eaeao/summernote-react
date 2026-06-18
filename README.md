@@ -72,6 +72,7 @@ Full docs (with a live playground) are at **<https://eaeao.github.io/summernote-
   never reconciles its subtree).
 - **Air mode** (`airMode`) — floating toolbar at the selection (below it on touch).
 - **4 themes** (`theme="lite|bs3|bs4|bs5"`, per-instance), **46 locales**, **plugins**.
+- **Dark mode** — `colorScheme="light|dark|auto"` themes the whole editor (toolbar, dialogs, popovers, code view) from CSS variables.
 - **IME-safe** observe-only composition state machine (Hangul/CJK).
 
 ## Props (selection)
@@ -82,6 +83,7 @@ Full docs (with a live playground) are at **<https://eaeao.github.io/summernote-
 | `onChange(html)` | fired on content change |
 | `toolbar` | `[group, names][]` config (defaults to the summernote default) |
 | `theme` | `'lite'` (default) `'bs3'` `'bs4'` `'bs5'` — per-instance; themes coexist |
+| `colorScheme` | `'light'` (default) `'dark'` `'auto'` — dark mode (lite skin) |
 | `lang` | a locale: `lang={locales['ko-KR']}` |
 | `onImageUpload(file)` | upload a picked image yourself; return/resolve the `src` to insert (else base64) |
 | `airMode`, `placeholder`, `disableResize`, `plugins` | see types |

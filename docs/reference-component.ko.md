@@ -22,6 +22,7 @@
 | `airMode` | `boolean` | `false` | Air 모드입니다: 고정 툴바/statusbar가 없고, 선택(selection) 위치에 떠 있는 툴바가 나타납니다. 루트에 `note-airframe` 클래스를 추가합니다. |
 | `plugins` | `readonly SummernotePlugin[]` | — | 인스턴스 단위 플러그인입니다. [Plugin API](./reference-api.md#plugins--defineplugin)를 참고하세요. |
 | `theme` | `'lite' \| 'bs3' \| 'bs4' \| 'bs5'` | `'lite'` | **인스턴스 단위** 비주얼 테마입니다 — 서로 다른 테마를 쓰는 여러 에디터가 공존할 수 있습니다. 루트의 `note-theme-${theme}` 클래스를 결정합니다. [Themes](./reference-options.md#themes)를 참고하세요. |
+| `colorScheme` | `'light' \| 'dark' \| 'auto'` | `'light'` | 다크 모드입니다. 루트에 `note-dark`를 추가하며, lite 스킨이 CSS 변수로 모든 chrome을 테마링합니다. `'auto'`는 OS `prefers-color-scheme`를 따릅니다. [Dark mode](./reference-options.md#dark-mode)를 참고하세요. |
 | `lang` | `LangPartial` (= `Record<string, Record<string, string> \| undefined>`) | en-US | 로케일입니다. `resolveLang(lang)`를 통해 en-US 위에 deep-merge됩니다. `lang={locales['ko-KR']}`처럼 사용하세요. [i18n](./reference-options.md#internationalization-i18n)을 참고하세요. |
 | `onImageUpload` | `ImageUploadHandler` (= `(file: File) => string \| Promise<string>`) | — | 이미지 업로드 훅입니다. base64로 임베드하는 대신 선택된 파일마다 호출되며, `src`를 반환/resolve하면 됩니다. [Callbacks](#callbacks--onchange-onimageupload)를 참고하세요. |
 | `className` | `string` | — | 루트 `note-editor note-frame …` 요소에 덧붙는 추가 클래스입니다. |

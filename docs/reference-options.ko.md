@@ -285,6 +285,32 @@ import '@eaeao/summernote-react/themes/bs5.css'; // optional: Bootstrap-5 skin
 
 ---
 
+## Dark mode
+
+`colorScheme` prop으로 에디터를 다크 모드로 전환합니다 — `'light'`(기본), `'dark'`, 또는 `'auto'`(OS `prefers-color-scheme`를 따름). 루트에 `note-dark` 클래스를 추가하며, 모든 chrome 표면(툴바·드롭다운·다이얼로그·팝오버·코드뷰)이 그 루트 안에 렌더되므로 다크 테마가 전부에 캐스케이드됩니다.
+
+```tsx
+<SummernoteEditor colorScheme="dark" />
+<SummernoteEditor colorScheme="auto" />   // OS prefers-color-scheme를 따름
+```
+
+lite 스킨은 색상을 `.note-editor`의 CSS 변수로 정의하므로, 변수를 덮어써서 직접 리테마링할 수도 있습니다 — 원하는 클래스나 `.note-dark`에 스코프해서:
+
+```css
+.note-editor.note-dark {
+  --note-bg: #11131a;          /* editable + 드롭다운/다이얼로그/팝오버 표면 */
+  --note-bg-toolbar: #181b22;  /* 툴바 + 상태바 */
+  --note-text: #e8eaf0;        /* editable 텍스트 */
+  --note-primary: #6d5efc;     /* primary(예: 다이얼로그 확인) 버튼 */
+  /* 그 외: --note-bg-btn(-hover/-active), --note-border(-btn/-muted), --note-muted,
+     --note-input-bg, --note-codable-bg / --note-codable-text, --note-shadow, … */
+}
+```
+
+> bs3/bs4/bs5는 자체 다크 팔레트를 제공하지 않습니다 — 앱의 Bootstrap 테마(예: Bootstrap 5의 `data-bs-theme="dark"`)를 따릅니다. 다크 모드 자체 스타일링은 기본 **lite** 스킨에 구현되어 있습니다.
+
+---
+
 ## Internationalization (i18n)
 
 `lang` prop은 en-US 위에 깊은 병합(deep-merge)되는 `LangPartial`을 받습니다. 누락된 키는 `resolveLang`을 통해 영어로 폴백됩니다. 기본값(`lang` 미지정 시)은 `langEnUS`입니다.

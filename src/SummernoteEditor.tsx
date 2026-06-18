@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type FC,
   type ReactNode,
 } from 'react';
@@ -50,6 +51,27 @@ function isEmptyHtml(html: string): boolean {
   return EMPTY_RE.test(html.trim());
 }
 
+const DARK_MQ = '(prefers-color-scheme: dark)';
+/** track the OS color scheme — only active when `colorScheme="auto"` (otherwise a no-op). */
+function useSystemDark(enabled: boolean): boolean {
+  const subscribe = useCallback(
+    (cb: () => void): (() => void) => {
+      if (!enabled || typeof window === 'undefined' || !window.matchMedia) {
+        return () => undefined;
+      }
+      const mq = window.matchMedia(DARK_MQ);
+      mq.addEventListener('change', cb);
+      return () => mq.removeEventListener('change', cb);
+    },
+    [enabled],
+  );
+  return useSyncExternalStore(
+    subscribe,
+    () => enabled && typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia(DARK_MQ).matches,
+    () => false,
+  );
+}
+
 export interface SummernoteEditorProps {
   /** controlled HTML value */
   value?: string;
@@ -69,6 +91,10 @@ export interface SummernoteEditorProps {
   plugins?: readonly SummernotePlugin[];
   /** visual theme (per-instance — multiple editors with different themes can coexist). */
   theme?: 'lite' | 'bs3' | 'bs4' | 'bs5';
+  /** color scheme: `'light'` (default), `'dark'`, or `'auto'` (follows the OS `prefers-color-scheme`).
+   *  Adds `note-dark` to the root; the lite skin themes all chrome (toolbar/dialogs/popovers/…) from
+   *  it via CSS variables. bs3/bs4/bs5 follow your app's own Bootstrap theme. */
+  colorScheme?: 'light' | 'dark' | 'auto';
   /** locale (a LangPartial deep-merged over en-US), e.g. lang={locales['ko-KR']}. */
   lang?: LangPartial;
   /** image-upload hook: called once per picked File instead of the default base64 embed; return (or
@@ -97,6 +123,7 @@ export const SummernoteEditor = forwardRef<SummernoteEditorHandle, SummernoteEdi
     airMode,
     plugins,
     theme,
+    colorScheme,
     lang,
     onImageUpload,
     className,
@@ -261,10 +288,14 @@ export const SummernoteEditor = forwardRef<SummernoteEditorHandle, SummernoteEdi
     [core, state, resolvedLang, chromeOptions, ui, codeview, onImageUpload],
   );
 
+  const systemDark = useSystemDark(colorScheme === 'auto');
+  const isDark = colorScheme === 'dark' || (colorScheme === 'auto' && systemDark);
+
   const rootClass = [
     'note-editor',
     'note-frame',
     `note-theme-${theme ?? 'lite'}`,
+    isDark ? 'note-dark' : '',
     airMode ? 'note-airframe' : '',
     fullscreen ? 'fullscreen' : '',
     className ?? '',

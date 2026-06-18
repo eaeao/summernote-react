@@ -1,168 +1,81 @@
 # Contributing
 
-## Contribution Flow
+Thanks for your interest in `@eaeao/summernote-react` — a React + TypeScript port of [summernote](https://summernote.org) on its own engine, with **zero runtime dependencies** and **no jQuery**. The editor engine and the React bindings ship in one package.
 
-This is a rough outline of what a contributor's workflow looks like:
+## Project invariants
 
-1. Fork the repository on GitHub.
-1. Clone the forked repository to your local machine.
-1. Create a topic branch from where you want to base your work.
-1. Make commits of logical units.
-1. Make sure your commit messages are in the proper format.
-1. Push your changes to a topic branch in your fork of the repository.
-1. Submit a pull request to the original repository.
-1. The PR must receive a :+1: from maintainers.
+These are enforced in CI; please keep them green:
 
-## Building and Testing Summernote
+- **No jQuery** anywhere under `src/` (`check-no-jquery`).
+- **Zero third-party runtime dependencies** — `react` / `react-dom` are peers, the engine is bundled (`check-no-runtime-deps`).
+- **No `document.execCommand`** — editing is done with the engine's own Range commands.
+- **Strict TypeScript** (`tsc --noEmit`, incl. `exactOptionalPropertyTypes`).
 
-### Building Summernote
+`yarn verify` runs the jQuery-ban, zero-dep, version-sync, and typecheck gates together.
 
-For building Summernote, you will need to have Node.js and Yarn installed on your machine.
+## Getting set up
 
-- Node.js: https://nodejs.org/
-- Yarn: https://yarnpkg.com/
+The package manager is **Yarn** (node-modules linker).
 
 ```bash
-# Install dependencies
-$ yarn install
-
-# Build summernote
-$ yarn build
+yarn install
+yarn verify   # jQuery-ban + zero-dep + version gates + typecheck
+yarn build    # tsup → dist (ESM + CJS + .d.ts)
 ```
 
-After running `yarn build`, you should now have a `dist/` directory populated with everything you need to use Summernote.
-
-### Starting the local server
-
-For developing Summernote, you can start a local server. This will allow you to make changes to the source code and see the changes in real-time.
-
-````bash
-
-## Start local server for developing Summernote.
+Run the docs + playground site against the editor source (hot reload):
 
 ```bash
-$ yarn dev
-# Open a browser on http://localhost:3000.
-# If you change source code, automatically reload your page.
-````
+cd demo && yarn install && yarn dev   # http://localhost:5173
+```
 
-### Testing Summernote
+## Contribution flow
 
-To run the tests, you can use the following command:
+1. Fork the repo and create a topic branch off `main`.
+2. Make focused commits (Conventional Commits — see below).
+3. Keep `yarn verify` green and add tests for behavior changes.
+4. Add a changeset if your change is user-facing (see Releases).
+5. Open a pull request. CI runs the gates, a typecheck, the package checks, and the test suite on **Chromium + WebKit**.
+
+## Tests
+
+Tests run in **Vitest browser mode** on real Chromium + WebKit (via Playwright) — not JSDOM — so range/selection/computed-style behave like a real browser. Specs live in `test/*.spec.{ts,tsx}`.
 
 ```bash
-$ yarn test
+yarn test                                                            # full suite, both engines (heavy)
+node_modules/.bin/vitest run test/<name>.spec.ts --project=chromium  # one spec, one engine (recommended while developing)
+yarn test:watch
 ```
 
-You can also run the tests in a specific browser. To do this, you can pass the `--browser` argument to the `yarn test` command.
+## Code style
+
+- **Prettier** (single quotes, 120 print width, trailing commas). Run `npx prettier --write .` or use your editor's Prettier integration.
+- **English** for code, comments, identifiers, and commit messages.
+- Keep comments minimal — add one only when the *why* isn't obvious from the code.
+
+## Commit messages
+
+[Conventional Commits](https://www.conventionalcommits.org): `<type>(<scope>): <subject>` — English, present tense, no trailing period.
+
+- **type**: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, `ci`, `build`, `revert`.
+- **scope** (optional): e.g. `editor`, `table`, `toolbar`, `range`, `build`, `lang`.
+- Do **not** add `Co-Authored-By` / AI co-author trailers.
+- Don't push directly to `main`, and don't bypass git hooks (`--no-verify`).
+
+## Releases (changesets)
+
+User-facing changes need a changeset:
 
 ```bash
-$ yarn test --browser=chrome
+yarn changeset
 ```
 
-The following browsers are supported: https://vitest.dev/guide/browser.html#browser-option-types
+Maintainers cut a release with `yarn version-packages` (bumps `package.json` + syncs the exported `VERSION` / `CORE_VERSION`) then `yarn release` (verify → build → `check:package` → publish).
 
-### Test Watch Mode
+## Architecture
 
-If you would like to run some part of your test codes, use the watch mode.
+The headless engine is `src/engine` (the chrome imports it via the `@engine` alias); the React component, hooks, toolbar, and chrome are under `src/`. For the architecture map, the controlled caret-safe contract, and the security model, see **[How it works](https://eaeao.github.io/summernote-react/docs/concepts)** and the repo's `CLAUDE.md`.
 
-```bash
-$ yarn test:watch
-```
+## Docs
 
-`vitest` will run test and keep waiting other test requests.
-
-### Running Specific Tests
-
-If you want to run some part of your test codes, below shows how to run `dom.spec.js` related tests only.
-
-```bash
-$ yarn test test/base/core/dom.spec.js
-```
-
-### Debugging Tests
-
-You can debug unit tests with VSCode following the steps:
-(Based on [article](https://vitest.dev/guide/debugging#vs-code))
-
-1. Install [VsCode](https://code.visualstudio.com/docs/setup/setup-overview)
-2. Create launch.json file on ~/.vscode folder with follow config:
-
-```json
-{
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Debug Current Test File",
-      "autoAttachChildProcesses": true,
-      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
-      "program": "${workspaceRoot}/node_modules/vitest/vitest.mjs",
-      "args": ["run", "${relativeFile}"],
-      "smartStep": true,
-      "console": "integratedTerminal"
-    }
-  ]
-}
-```
-
-3. On terminal, run test with command:
-
-```bash
-$ yarn test
-```
-
-4. Open vscode
-5. Set breakpoint on code
-6. Press F5 to run Debug and wait to stop on breakpoint
-
-## Conventions
-
-In order to maintain a consistent codebase, we have a few coding conventions in place.
-
-### Code Style
-
-- eslint: https://eslint.org
-- eslint rule: https://github.com/summernote/summernote/blob/main/.eslintrc
-
-> As part of this repo, we use [Husky](https://github.com/typicode/husky) for git hooks. We leverage the prepush hook to prevent bad commits.
-
-### Format of the Commit Message
-
-We follow a rough convention for commit messages that is designed to answer two questions: what changed and why. The subject line should feature the what and the body of the commit should describe the why.
-
-```
-Remove the synced seq when detaching the document
-
-To collect garbage like CRDT tombstones left on the document, all
-the changes should be applied to other replicas before GC. For this
-, if the document is no longer used by this client, it should be
-detached.
-```
-
-The subject line should be 70 characters or less and the body should be wrapped at 80 characters. This allows the message to be easier to read on GitHub as well as in various git tools.
-
-### Testing
-
-Testing is the responsibility of all contributors, but it is also coordinated by maintainers. It is recommended to write them in order from successful cases to exceptional cases.
-
-## Document Structure
-
-Understand the document structure of Summernote is important to contribute to the project. In Summernote, user can edit the document with various elements and nodes in HTML. But, the document structure is limited to the following:
-
-```text
-- body container: <div class="note-editable">, <td>, <blockquote>, <ul>
-- block node: <div>, <p>, <li>, <h1>, <table>
-- void block node: <hr>
-- inline node: <span>, <b>, <font>, <a>, ...
-- void inline node: <img>
-- text node: #text
-```
-
-- A body container has block node, but `<ul>` has only `<li>` nodes.
-- A body container also has inline nodes sometimes. This inline nodes will be wrapped with `<p>` when enter key pressed.
-- A block node only has inline nodes.
-- A inline nodes has another inline nodes
-- `#text` and void inline node doesn't have children.
+Documentation is Markdown under `docs/` (Diátaxis-structured), rendered by the demo site and mirrored to `/llms.txt`. `markdownlint` + a link check run in CI on every docs change.

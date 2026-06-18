@@ -1,0 +1,31 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "@eaeao/summernote-react",
+  "description": "React + TypeScript port of the summernote WYSIWYG editor — the editor engine and React bindings in one package, with zero runtime dependencies and no jQuery.",
+  "folders": ["docs"],
+  "excludeFiles": [
+    "PORTING-PLAN.md",
+    "STATUS.md",
+    "CHROME-SPECS.md",
+    "README.ko.md",
+    "getting-started.ko.md",
+    "examples.ko.md",
+    "concepts.ko.md",
+    "migrating.ko.md",
+    "reference-component.ko.md",
+    "reference-commands.ko.md",
+    "reference-options.ko.md",
+    "reference-api.ko.md"
+  ],
+  "rules": [
+    "Use it as a React component: render <SummernoteEditor value={html} onChange={setHtml} />. It is not a jQuery plugin — there is no $('.x').summernote(...), no $.summernote globals, and no script load-order.",
+    "CSS is not auto-injected: always import '@eaeao/summernote-react/styles.css' and '@eaeao/summernote-react/icons.css'. Theme skins are optional: '/themes/bs3.css', '/themes/bs4.css', or '/themes/bs5.css'.",
+    "Dispatch editing actions by flat command name via ref.current.command(name, ...args) or useCommand() — not a 'module.method' string. The built-in names are the exported CommandName union (50 commands); plugin commands are also accepted.",
+    "Controlled value/onChange is caret-safe: the engine ignores echoes of its own output, so pass value and onChange and never force-resync the value on each keystroke.",
+    "Options are component props (toolbar, theme, lang, placeholder, options). lang deep-merges over en-US with English fallback; toolbar and options.keyMap replace the defaults wholesale rather than merging.",
+    "theme is a per-instance prop ('lite' default, or 'bs3' | 'bs4' | 'bs5'); editors with different themes can coexist on one page.",
+    "onImageUpload(file: File) is called once per picked file and must return or resolve the image src string; without it, picked images are embedded as base64 data URLs.",
+    "Zero runtime dependencies; react and react-dom (>= 18) are peer dependencies. TypeScript declarations ship in the package, so no @types/... is needed.",
+    "Security: code-view HTML is purified and link hrefs reject javascript:/vbscript:/data: schemes, but the controlled value, setCode(), and initial HTML are trusted — sanitize untrusted HTML before passing it in."
+  ]
+}

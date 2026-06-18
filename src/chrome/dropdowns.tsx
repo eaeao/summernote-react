@@ -43,7 +43,12 @@ export function FontNameDropdown(): JSX.Element {
   const { lang, options, state } = useChrome();
   const cmd = useCommand();
   const fonts = options.fontNames;
-  const current = state.fontName || fonts[0] || '';
+  // show the caret's font; keep the last seen value when the caret leaves; default to the first font.
+  const lastFont = useRef(fonts[0] || '');
+  if (state.fontName) {
+    lastFont.current = state.fontName;
+  }
+  const current = state.fontName || lastFont.current;
   return (
     <Dropdown
       title={lang.font.name}
@@ -51,7 +56,7 @@ export function FontNameDropdown(): JSX.Element {
       toggle={<span className="note-current-fontname">{current}</span>}
     >
       {fonts.map((font) => {
-        const checked = eq(state.fontName, font);
+        const checked = eq(current, font);
         return (
           <button
             key={font}

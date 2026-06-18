@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { EditorCore, EditorState, Lang, defaultOptions } from '@engine';
+import type { CommandName, EditorCore, EditorState, Lang, defaultOptions } from '@engine';
 
 export type ChromeOptions = typeof defaultOptions;
 
@@ -28,7 +28,7 @@ export interface ChromeValue {
   readonly state: EditorState;
   readonly lang: Lang;
   readonly options: ChromeOptions;
-  /** dialog/view-toggle handlers; partial while those tracks land. */
+  /** dialog/view-toggle handlers (each method is optional). */
   readonly ui: Partial<ChromeUI>;
   /** true while the codeview textarea is showing — the toolbar disables (except codeview). */
   readonly codeviewActive: boolean;
@@ -49,7 +49,7 @@ export function useChrome(): ChromeValue {
 }
 
 /** dispatch a command, keeping the editable selection (toolbar mousedown must not blur it). */
-export function useCommand(): (name: string, ...args: unknown[]) => void {
+export function useCommand(): (name: CommandName | (string & {}), ...args: unknown[]) => void {
   const { core } = useChrome();
   return (name, ...args) => {
     core?.command(name, ...args);

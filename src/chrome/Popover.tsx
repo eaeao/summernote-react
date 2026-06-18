@@ -10,8 +10,8 @@ export interface PopoverProps {
 /**
  * Absolutely-positioned popover shell (port of the lite ui.popover). Positioned within the
  * editing-area (which is position:relative) at a target-derived {top,left}. Preserves the
- * .note-popover / .note-popover-content class contract. Mobile placement (below the selection,
- * §13.3) is handled by the caller computing `top`.
+ * .note-popover / .note-popover-content class contract. Mobile placement (below the selection) is
+ * handled by the caller computing `top`.
  */
 export function Popover({ className, top, left, children }: PopoverProps): JSX.Element {
   return (

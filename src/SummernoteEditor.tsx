@@ -15,6 +15,7 @@ import {
   langEnUS,
   resolveLang,
   purifyCodeview,
+  type CommandName,
   type EditorCore,
   type EditorCoreOptions,
   type LangPartial,
@@ -38,7 +39,7 @@ export interface SummernoteEditorHandle {
   focus(): void;
   getCode(): string;
   setCode(html: string): void;
-  command(name: string, ...args: unknown[]): boolean;
+  command(name: CommandName | (string & {}), ...args: unknown[]): boolean;
   undo(): void;
   redo(): void;
   readonly core: EditorCore | null;
@@ -70,8 +71,8 @@ export interface SummernoteEditorProps {
   theme?: 'lite' | 'bs3' | 'bs4' | 'bs5';
   /** locale (a LangPartial deep-merged over en-US), e.g. lang={locales['ko-KR']}. */
   lang?: LangPartial;
-  /** image-upload hook: receive the picked File(s) and insert your uploaded URL(s) instead of the
-   *  default base64 embed. `onImageUpload={(files, insert) => upload(files[0]).then(u => insert(u))}` */
+  /** image-upload hook: called once per picked File instead of the default base64 embed; return (or
+   *  resolve to) the image src to insert. `onImageUpload={(file) => uploadToServer(file)}` */
   onImageUpload?: ImageUploadHandler;
   className?: string;
 }

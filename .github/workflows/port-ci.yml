@@ -21,8 +21,14 @@ jobs:
         run: node scripts/check-no-jquery.mjs
       - name: Zero-dep gate
         run: node scripts/check-no-runtime-deps.mjs
+      - name: Version sync gate
+        run: node scripts/check-version.mjs
       - name: Typecheck
         run: yarn typecheck
+      - name: Build
+        run: yarn build
+      - name: Package gate (publint + attw)
+        run: yarn check:package
       - name: Install Playwright browsers
         run: yarn playwright install --with-deps chromium webkit
       - name: Test (chromium + webkit)

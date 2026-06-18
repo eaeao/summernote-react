@@ -10,7 +10,7 @@ export interface AirPopoverHostProps {
 /**
  * Drives the air-mode floating toolbar: shows it at the current NON-collapsed selection inside the
  * editable, hides it otherwise. Positions via the selection's client rect relative to the editing
- * area, accounting for visualViewport offset (soft-keyboard-shifted viewport, §13.3). On coarse
+ * area, accounting for visualViewport offset (soft-keyboard-shifted viewport). On coarse
  * pointers it sits below the selection (mobile callout avoidance).
  */
 export function AirPopoverHost({ editingAreaRef }: AirPopoverHostProps): JSX.Element | null {

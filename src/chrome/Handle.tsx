@@ -14,7 +14,7 @@ export interface HandleProps {
 
 /**
  * Image resize handle frame (port of the lite Handle). The SE-corner handle drags to resize the
- * image width. Pointer Events + setPointerCapture (§13.3) so it works for touch + mouse, releasing
+ * image width. Pointer Events + setPointerCapture so it works for touch + mouse, releasing
  * on pointercancel; touch-action:none stops scroll/zoom stealing the gesture. The handle element
  * is NOT re-rendered mid-drag (would drop the pointer capture).
  */

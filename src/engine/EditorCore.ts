@@ -1,17 +1,13 @@
 /**
- * EditorCore — minimal headless editor engine (Phase-1 thin slice).
+ * EditorCore — headless editor engine.
  *
- * Proves the architecture end-to-end BEFORE the full editing layer lands:
- *  - own Range-based commands (NO execCommand — the v1 decision) dispatched through a
- *    typed registry with a before/afterCommand lifecycle,
- *  - a minimal innerHTML history (undo/redo),
+ *  - own Range-based commands (no execCommand) dispatched through a typed registry with a
+ *    before/afterCommand lifecycle,
+ *  - an innerHTML + selection-bookmark history (undo/redo),
  *  - a derived, structurally-detected EditorState published to subscribers
- *    (the useSyncExternalStore source that replaces Buttons.updateCurrentStyle polling),
- *  - an IME composition state machine (observe-only window + settle + reconcile) — the
- *    single highest mobile-input risk (Hangul/CJK).
- *
- * The full faithful editing engine (Style.styleNodes toggleInline, Table, Typing, Bullet,
- * the bookmark-accurate History) replaces the stubs here in Phase 2.
+ *    (the useSyncExternalStore source),
+ *  - an IME composition state machine (observe-only window + settle + reconcile) for safe
+ *    mobile / CJK (Hangul) input.
  */
 import dom from './core/dom';
 import wrappedRange from './core/range';
@@ -29,10 +25,9 @@ export type EditorAlign = 'left' | 'center' | 'right' | 'justify';
 /**
  * The full toolbar active-state, published to subscribers (useSyncExternalStore source).
  *
- * Computed STRUCTURALLY (dom.ancestor walks over our own deterministic markup), NOT via the
- * deprecated `document.queryCommandState` that `Style.current` uses — queryCommandState is
- * unreliable cross-browser and does not recognize our canonical markup (e.g. `<s>` for strike).
- * This is the faithful intent of `Buttons.updateCurrentStyle`, made deterministic.
+ * Computed STRUCTURALLY from the caret's ancestor chain over our own deterministic markup, NOT via
+ * the deprecated `document.queryCommandState` — which is unreliable cross-browser and does not
+ * recognize our canonical markup (e.g. `<s>` for strike).
  */
 export interface EditorState {
   readonly bold: boolean;
@@ -67,7 +62,7 @@ export interface EditorState {
 
 export interface EditorCoreOptions {
   value?: string;
-  /** fired after content changes (the code() onChange contract, minimal). */
+  /** fired after the editor content changes; receives the editable's current HTML (same value as getHTML()). */
   onChange?: (html: string) => void;
   /** undo-stack depth (default 200). */
   historyLimit?: number;
@@ -86,7 +81,7 @@ type Listener = () => void;
 type Command = (core: EditorCore, ...args: unknown[]) => boolean;
 
 const EMPTY_PARA = '<p><br></p>';
-/** post-compositionend settle window; engine-gate to iOS/WebKit later (see PORTING-PLAN §13.2). */
+/** post-compositionend settle window before reconciling IME-composed text. */
 const SETTLE_MS = 100;
 
 /**
@@ -137,10 +132,10 @@ function dequoteFirstFamily(family: string): string {
 }
 
 /**
- * The structural readStyle seam (PORTING-PLAN §13.1) — derive font/size/line-height from the
- * caret's element WITHOUT execCommand/queryCommandValue. Inline style wins (it preserves the pt
- * unit and the user's chosen family); getComputedStyle is the fallback (always px). The chrome
- * matches fontName against its options.fontNames; here we expose the raw first family.
+ * Structural readStyle: derive font/size/line-height from the caret's element WITHOUT
+ * execCommand/queryCommandValue. Inline style wins (it preserves the pt unit and the user's chosen
+ * family); getComputedStyle is the fallback (always px). The chrome matches fontName against its
+ * options.fontNames; here we expose the raw first family.
  */
 function readStyle(cont: Element, para: HTMLElement | null): ValueStyle {
   const computed = getComputedStyle(cont);
@@ -283,7 +278,7 @@ function applyBlockStyle(styleInfo: Record<string, string>): boolean {
  * Apply an inline CSS property to the selected text runs via Style.styleNodes (the own-command
  * path for font-family/font-size/color/background-color — port of Editor.fontStyling). For a
  * COLLAPSED caret it seeds a ZERO_WIDTH bogus char in the empty span and re-selects it: the
- * §13.1 WebKit guard against caret ejection out of an empty styled span (without it, Safari
+ * WebKit guard against caret ejection out of an empty styled span (without it, Safari
  * types the next character OUTSIDE the span). Otherwise re-selects across the styled spans so
  * active-state + chained ops see the run.
  */
@@ -461,7 +456,64 @@ function formatBlock(tag: string): boolean {
 /** commands that don't act on the live selection (history, or explicit-target image ops). */
 const SELECTIONLESS_COMMANDS = new Set(['undo', 'redo', 'resizeImage', 'floatImage', 'removeMedia']);
 
-const COMMANDS: Record<string, Command> = {
+/**
+ * Every built-in command name accepted by {@link EditorCore.command} (and the React handle's
+ * `command()`). Plugin commands registered via {@link EditorCore.registerCommand} are additional
+ * runtime names not in this union — that is why `command()` also accepts any `string`.
+ */
+export type CommandName =
+  | 'insertText'
+  | 'bold'
+  | 'italic'
+  | 'underline'
+  | 'strikethrough'
+  | 'superscript'
+  | 'subscript'
+  | 'removeFormat'
+  | 'justifyLeft'
+  | 'justifyCenter'
+  | 'justifyRight'
+  | 'justifyFull'
+  | 'insertOrderedList'
+  | 'insertUnorderedList'
+  | 'formatPara'
+  | 'formatH1'
+  | 'formatH2'
+  | 'formatH3'
+  | 'formatH4'
+  | 'formatH5'
+  | 'formatH6'
+  | 'insertHorizontalRule'
+  | 'createLink'
+  | 'unlink'
+  | 'insertTable'
+  | 'addRow'
+  | 'addCol'
+  | 'deleteRow'
+  | 'deleteCol'
+  | 'deleteTable'
+  | 'tab'
+  | 'untab'
+  | 'fontName'
+  | 'fontSize'
+  | 'fontSizeUnit'
+  | 'foreColor'
+  | 'backColor'
+  | 'color'
+  | 'lineHeight'
+  | 'formatBlock'
+  | 'indent'
+  | 'outdent'
+  | 'insertImage'
+  | 'resizeImage'
+  | 'floatImage'
+  | 'removeMedia'
+  | 'insertVideo'
+  | 'insertNode'
+  | 'undo'
+  | 'redo';
+
+const COMMANDS = {
   insertText(core, ...args): boolean {
     const text = String(args[0] ?? '');
     const range = currentRange();
@@ -750,7 +802,7 @@ const COMMANDS: Record<string, Command> = {
   redo(core): boolean {
     return core.redo();
   },
-};
+} satisfies Record<CommandName, Command>;
 
 export class EditorCore {
   readonly editable: HTMLElement;
@@ -792,8 +844,8 @@ export class EditorCore {
     this.customCommands[name] = fn;
   }
 
-  command(name: string, ...args: unknown[]): boolean {
-    const cmd = this.customCommands[name] ?? COMMANDS[name];
+  command(name: CommandName | (string & {}), ...args: unknown[]): boolean {
+    const cmd = this.customCommands[name] ?? (COMMANDS as Record<string, Command>)[name];
     if (!cmd) {
       return false;
     }
@@ -1158,7 +1210,7 @@ export class EditorCore {
     if (!method) {
       return;
     }
-    if (COMMANDS[method]) {
+    if ((COMMANDS as Record<string, Command>)[method]) {
       e.preventDefault();
       this.command(method);
     } else if (this.options.onShortcut && this.options.onShortcut(method)) {

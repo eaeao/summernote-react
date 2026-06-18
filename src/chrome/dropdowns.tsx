@@ -170,7 +170,7 @@ export function LineHeightDropdown(): JSX.Element {
   );
 }
 
-/** color dropdown — fore + back palettes (recent-color split button is a Phase-4 refinement). */
+/** color dropdown — fore + back palettes. */
 export function ColorDropdown(): JSX.Element {
   const { lang, options } = useChrome();
   const cmd = useCommand();

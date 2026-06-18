@@ -1,14 +1,12 @@
 /**
  * core.env — engine-accurate platform/agent detection + feature-detect flags.
  *
- * Redesigned (NOT a 1:1 port of the legacy env.js) per PORTING-PLAN §13.1: the legacy file
- * misclassifies engines (`isWebkit` true on Chrome, `isChrome` true on Chromium Edge, no
- * iOS/Android/Samsung distinction). Every WebKit/iOS caret workaround keys off the engine flags,
- * so they must be correct or the guards no-op on Safari.
+ * Classifies engine (Blink/WebKit/Gecko) and OS (iOS/Android/Samsung) precisely, so the WebKit/iOS
+ * caret workarounds key off correct flags (otherwise the guards no-op on Safari).
  *
- * RULE (§13.1): branch touch/geometry behavior on the FEATURE-DETECT flags
+ * Rule: branch touch/geometry behavior on the feature-detect flags
  * (hasPointerEvent/hasVisualViewport/isCoarsePointer), never on isSafari/isBlink. Engine flags
- * gate only the documented browser-bug workarounds (e.g. WebKit caret ejection).
+ * gate only documented browser-bug workarounds (e.g. WebKit caret ejection).
  *
  * `detectEnv(nav, win)` is a pure factory taking navigator/window-like objects — the injection
  * seam so tests can exercise each branch without a real device.

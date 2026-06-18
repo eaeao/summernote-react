@@ -33,15 +33,21 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./styles.css": "./src/styles/summernote-lite.css",
     "./icons.css": "./src/styles/summernote-icons.css",
     "./themes/bs3.css": "./src/styles/themes/bs3.css",
     "./themes/bs4.css": "./src/styles/themes/bs4.css",
-    "./themes/bs5.css": "./src/styles/themes/bs5.css"
+    "./themes/bs5.css": "./src/styles/themes/bs5.css",
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",
@@ -61,12 +67,15 @@
     "test:watch": "vitest",
     "lint:no-jquery": "node scripts/check-no-jquery.mjs",
     "check:deps": "node scripts/check-no-runtime-deps.mjs",
-    "verify": "yarn lint:no-jquery && yarn check:deps && yarn typecheck",
+    "check:version": "node scripts/check-version.mjs",
+    "check:package": "publint --pack npm && attw --pack --exclude-entrypoints styles.css icons.css themes/bs3.css themes/bs4.css themes/bs5.css",
+    "verify": "yarn lint:no-jquery && yarn check:deps && yarn check:version && yarn typecheck",
     "changeset": "changeset",
-    "version-packages": "changeset version",
-    "release": "yarn verify && yarn build && changeset publish"
+    "version-packages": "changeset version && node scripts/sync-version.mjs",
+    "release": "yarn verify && yarn build && yarn check:package && changeset publish"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.3",
     "@changesets/cli": "^2.27.9",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.1.0",
@@ -74,6 +83,7 @@
     "@types/react-dom": "^18.3.1",
     "@vitest/browser": "^3.0.0",
     "playwright": "^1.48.0",
+    "publint": "^0.3.21",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tsup": "^8.3.5",

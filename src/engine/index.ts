@@ -1,10 +1,11 @@
 /**
- * @engine — headless, framework-agnostic editor engine.
+ * Headless, framework-agnostic editor engine.
  */
-export const CORE_VERSION = '1.0.0';
+// synced from package.json by scripts/sync-version.mjs (enforced by scripts/check-version.mjs).
+export const CORE_VERSION: string = '1.2.0';
 
 export { EditorCore, createEditorCore } from './EditorCore';
-export type { EditorState, EditorCoreOptions, EditorAlign } from './EditorCore';
+export type { EditorState, EditorCoreOptions, EditorAlign, CommandName } from './EditorCore';
 
 export { defaultOptions } from './options';
 export type { ToolbarGroup, PopoverConfig, KeyMap, Icons } from './options';

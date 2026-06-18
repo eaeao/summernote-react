@@ -6,15 +6,15 @@ export interface AirPopoverProps {
   config: readonly ToolbarGroup[];
   top: number;
   left: number;
-  /** when true, position below the selection (mobile — §13.3) instead of above. */
+  /** when true, position below the selection (mobile) instead of above. */
   below: boolean;
 }
 
 /**
  * Air-mode floating toolbar (port of AirPopover) — renders the air toolbar config at the current
  * selection. Reuses the toolbar item registry, so the same buttons/dropdowns work. On coarse
- * pointers it sits BELOW the selection to avoid the OS native selection callout (§13.3 — an
- * intentional divergence from the desktop above-placement).
+ * pointers it sits below the selection to avoid the OS native selection callout (an intentional
+ * divergence from the desktop above-placement).
  */
 export function AirPopover({ config, top, left, below }: AirPopoverProps): JSX.Element {
   return (

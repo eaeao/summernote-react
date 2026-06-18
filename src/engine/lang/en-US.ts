@@ -1,6 +1,5 @@
 /**
- * en-US language pack — ported verbatim from src/js/summernote-en-US.js (jQuery $.extend wrapper
- * dropped; exported as a plain typed object). `Lang` is the canonical shape every locale extends.
+ * en-US language pack, a plain typed object. `Lang` is the canonical shape every locale extends.
  */
 export const langEnUS = {
   font: {

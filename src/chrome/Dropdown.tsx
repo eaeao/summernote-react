@@ -19,7 +19,7 @@ export interface DropdownProps {
 
 /**
  * Standalone dropdown (no Bootstrap JS) — port of the lite DropdownUI behavior, unified across
- * all themes per §11. Click toggles; outside-click / Escape / item-click close. Markup preserves
+ * all themes. Click toggles; outside-click / Escape / item-click close. Markup preserves
  * the .note-btn-group / .note-dropdown-toggle / .note-dropdown(-menu) class contract.
  */
 export function Dropdown({

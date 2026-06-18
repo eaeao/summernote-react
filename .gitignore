@@ -20,6 +20,9 @@ package-lock.json
 # zip file
 *.zip
 
+# npm/yarn pack artifacts (publint --pack / attw --pack)
+*.tgz
+
 # webfont temp
 src/icons/dist/*
 

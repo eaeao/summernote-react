@@ -1,12 +1,11 @@
 /**
- * Codeview HTML purification — ported 1:1 from the legacy Codeview.purify + settings.js defaults
- * (codeviewFilter: true). The codeview textarea is attacker-influenceable, so its content must be
- * filtered before it is written back to the editable (PORTING-PLAN §9 — the non-skippable codeview
- * XSS gate). Strips script/style/object/embed/frame(set)/meta/base/link/title/textarea/applet/xml
- * tags and removes every <iframe> whose src is not in the whitelist.
+ * Codeview HTML purification. The codeview textarea is attacker-influenceable, so its content must
+ * be filtered before it is written back to the editable (the codeview XSS gate). Strips
+ * script/style/object/embed/frame(set)/meta/base/link/title/textarea/applet/xml tags and removes
+ * every <iframe> whose src is not in the whitelist.
  *
- * NOTE: this is the codeview boundary only. The controlled `value` prop / setCode() / initial seed
- * are DEVELOPER-supplied (trusted), matching the legacy code() setter which does not purify.
+ * NOTE: this is the codeview boundary only. The controlled `value` prop, setCode(), and the initial
+ * seed are developer-supplied (trusted) and are not purified.
  */
 
 export interface CodeviewFilterOptions {

@@ -1,7 +1,7 @@
 /**
- * Default options — the chrome-relevant subset of the legacy settings.js SSOT, as framework-
- * agnostic data. The React chrome (toolbar/dropdowns/dialogs/popovers) reads these; new options
- * are added here. Icons are the shared `note-icon-*` set used by every theme.
+ * Default options as framework-agnostic data — the single source of truth for the chrome.
+ * The React chrome (toolbar/dropdowns/dialogs/popovers) reads these; new options are added here.
+ * Icons are the shared `note-icon-*` set used by every theme.
  */
 
 export type ToolbarGroup = readonly [string, readonly string[]];

@@ -9,7 +9,7 @@ export interface StatusbarProps {
 
 /**
  * Resize statusbar — drag the bar to change the editable height. Uses Pointer Events with
- * setPointerCapture (PORTING-PLAN §13.3: works for touch + mouse, releases on pointercancel),
+ * setPointerCapture (works for touch + mouse, releases on pointercancel),
  * so mobile resize works where the legacy mouse-only handler did nothing. touch-action:none on
  * the bar prevents the gesture being stolen by scroll/zoom.
  */

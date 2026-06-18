@@ -59,12 +59,25 @@ The `SummernoteEditorHandle` exposes `getCode()`, `setCode(html)`, `command(name
 
 ## Documentation
 
+**Tutorial** — [Getting started](./getting-started.md): install, CSS imports, and a guided first editor.
+
+**How-to** — [Examples](./examples.md): copy-pasteable recipes (air mode, themes, i18n, image upload, custom toolbars, plugins, …).
+
+**Reference**
+
 | Page | What's inside |
 |---|---|
-| [Getting started](./getting-started.md) | Install, CSS imports, controlled vs. uncontrolled, the full `<SummernoteEditor>` prop table, the imperative ref API, and the `useSummernote` headless hook. |
-| [Deep dive](./deep-dive.md) | Engine `options`, the `toolbar` / `popover` tuple format and built-in item names, every `command(name, ...)`, the published `EditorState`, callbacks, keyboard shortcuts, and the controlled caret-safe / codeview-XSS contracts. |
-| [Examples](./examples.md) | Copy-pasteable recipes: air mode, multiple editors, click-to-edit, custom toolbars, themes, image upload, and localized editors. |
-| [Plugins](./plugins.md) | The `definePlugin({ name, commands, buttons })` contract, `useChrome` / `useCommand` authoring helpers, and the bundled `helloPlugin` / `specialcharsPlugin` / `databasicPlugin`. |
+| [Component & state](./reference-component.md) | Every `<SummernoteEditor>` prop, the `SummernoteEditorHandle` ref, the published `EditorState`, and the `onChange` / `onImageUpload` callbacks. |
+| [Commands](./reference-commands.md) | The full `command(name, ...)` catalog (inline, block, list, table, media, history). |
+| [Options & toolbar](./reference-options.md) | Engine `options`, the `toolbar` / `popover` tuple format and item names, fonts, colors, line heights, the `keyMap`, themes, and the 46 bundled locales. |
+| [Headless & plugin API](./reference-api.md) | `useSummernote`, `createEditorCore`, the `EditorCore` methods, and the `definePlugin` / `useChrome` / `useCommand` contract. |
+
+**Explanation**
+
+| Page | What's inside |
+|---|---|
+| [How it works](./concepts.md) | Architecture (engine vs. chrome), the controlled caret-safe contract, the security model, and extension-safe selection. |
+| [Migrating from jQuery](./migrating.md) | The legacy `$('.x').summernote(...)` / `$.summernote.plugins` → React component, props, ref, and `definePlugin` mapping. |
 
 ## Key facts
 

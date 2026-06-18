@@ -122,7 +122,7 @@ interface SummernoteEditorHandle {
 }
 ```
 
-Each member (`focus`, `getCode`, `setCode`, `command`, `undo`, `redo`, and the raw `core` escape hatch) is documented in the [`SummernoteEditorHandle` reference](./deep-dive.md#imperative-ref--summernoteeditorhandle).
+Each member (`focus`, `getCode`, `setCode`, `command`, `undo`, `redo`, and the raw `core` escape hatch) is documented in the [`SummernoteEditorHandle` reference](./reference-component.md#imperative-ref--summernoteeditorhandle).
 
 ```tsx
 import { useRef } from 'react';
@@ -142,7 +142,7 @@ export function WithRef() {
 }
 ```
 
-The `command(name, ...args)` method is the React equivalent of summernote's string-dispatch API (`summernote('insertText', 'hi')`). See the [command catalog](./deep-dive.md#commands--commandname-args) for the full set (`bold`, `insertText`, `insertImage`, `createLink`, `insertTable`, `formatH1`…`formatH6`, `undo`, `redo`, and more).
+The `command(name, ...args)` method is the React equivalent of summernote's string-dispatch API (`summernote('insertText', 'hi')`). See the [command catalog](./reference-commands.md) for the full set (`bold`, `insertText`, `insertImage`, `createLink`, `insertTable`, `formatH1`…`formatH6`, `undo`, `redo`, and more).
 
 ---
 
@@ -157,7 +157,7 @@ The props you'll reach for first:
 - `lang` — locale, deep-merged over en-US (see [i18n](#internationalization-i18n)).
 - `placeholder`, `airMode`, `disableResize`, `plugins`, `onImageUpload`, `options`, `className`.
 
-The **complete** prop table — every prop, type, default, and the `options` / `EditorState` surface — lives in the [Props reference](./deep-dive.md#props-reference).
+The **complete** prop table — every prop, type, default, and the `options` / `EditorState` surface — lives in the [Props reference](./reference-component.md#props-reference).
 
 ---
 
@@ -183,7 +183,7 @@ Recognized item names:
 - **Format buttons**: `bold`, `italic`, `underline`, `strikethrough`, `superscript`, `subscript`, `clear`, `ul`, `ol`, `hr`, `undo`, `redo`.
 - **Action buttons**: `link`, `picture`, `video`, `fullscreen`, `codeview`, `help`.
 
-Any other name resolves to a custom plugin button (see [Plugins](#plugins)). The default toolbar layout, the full item-name tables, and the contextual popover layouts are in the [toolbar reference](./deep-dive.md#toolbar--popover-item-names).
+Any other name resolves to a custom plugin button (see [Plugins](#plugins)). The default toolbar layout, the full item-name tables, and the contextual popover layouts are in the [toolbar reference](./reference-options.md#toolbar--popover-item-names).
 
 ---
 
@@ -219,7 +219,7 @@ You can also supply an ad-hoc partial override (unspecified keys fall back to En
 <SummernoteEditor lang={{ link: { insert: '링크 삽입' } }} />
 ```
 
-Available codes include `ar-AR, de-DE, es-ES, fr-FR, it-IT, ja-JP, ko-KR, pt-BR, ru-RU, zh-CN, zh-TW`, and more (46 in total; en-US is the always-present base). See the [i18n reference](./deep-dive.md#internationalization-i18n) for the full list and tree-shakeable single-locale imports.
+Available codes include `ar-AR, de-DE, es-ES, fr-FR, it-IT, ja-JP, ko-KR, pt-BR, ru-RU, zh-CN, zh-TW`, and more (46 in total; en-US is the always-present base). See the [i18n reference](./reference-options.md#internationalization-i18n) for the full list and tree-shakeable single-locale imports.
 
 ---
 
@@ -236,7 +236,7 @@ By default a picked image is embedded as a base64 data URL. Provide an `onImageU
 />
 ```
 
-The handler is `(file: File) => string | Promise<string>`, called once per picked file. While the promise is pending the editor shows a loading spinner in place; on rejection the placeholder is removed and never leaks into the saved value or the undo stack. Inserting an image by URL through the picture dialog works regardless of the hook. See the [`onImageUpload` reference](./deep-dive.md#callbacks--onchange-onimageupload) for details.
+The handler is `(file: File) => string | Promise<string>`, called once per picked file. While the promise is pending the editor shows a loading spinner in place; on rejection the placeholder is removed and never leaks into the saved value or the undo stack. Inserting an image by URL through the picture dialog works regardless of the hook. See the [`onImageUpload` reference](./reference-component.md#callbacks--onchange-onimageupload) for details.
 
 ---
 
@@ -283,7 +283,7 @@ const starPlugin = definePlugin({
 <SummernoteEditor plugins={[starPlugin]} toolbar={[['insert', ['star']]]} />;
 ```
 
-Three reference plugins ship in the box: `helloPlugin`, `specialcharsPlugin`, `databasicPlugin`. See [Plugins](./plugins.md) for the full `definePlugin` contract and `useChrome` / `useCommand` helpers.
+Three reference plugins ship in the box: `helloPlugin`, `specialcharsPlugin`, `databasicPlugin`. See [Headless & plugin API](./reference-api.md#plugins--defineplugin) for the full `definePlugin` contract and `useChrome` / `useCommand` helpers.
 
 ---
 
@@ -315,12 +315,12 @@ The engine surface (e.g. `EditorCore`, `EditorState`, `EditorCoreOptions`) is al
 
 ### Headless hook
 
-For full control over layout and markup, `useSummernote(options)` returns `{ editableRef, core, state }`. Attach `editableRef` to your own `contentEditable` `.note-editable` div; the engine owns that subtree imperatively, and `state` (an `EditorState`) drives your custom chrome via `useSyncExternalStore`. See the [headless reference](./deep-dive.md#headless-usesummernote--createeditorcore) for the hook contract.
+For full control over layout and markup, `useSummernote(options)` returns `{ editableRef, core, state }`. Attach `editableRef` to your own `contentEditable` `.note-editable` div; the engine owns that subtree imperatively, and `state` (an `EditorState`) drives your custom chrome via `useSyncExternalStore`. See the [headless reference](./reference-api.md#headless-usesummernote--createeditorcore) for the hook contract.
 
 ---
 
 ## Next steps
 
-- [API reference](./deep-dive.md) — every `<SummernoteEditor>` prop, the `SummernoteEditorHandle` ref, the full `command(...)` catalog, engine options, `EditorState`, the `useSummernote` headless hook, and the controlled caret-safe / codeview-XSS contracts.
+- [Reference](./reference-component.md) — every `<SummernoteEditor>` prop, the `SummernoteEditorHandle` ref, the full `command(...)` catalog, engine options, `EditorState`, and the `useSummernote` headless hook.
 - [Examples](./examples.md) — copy-pasteable recipes (air mode, themes, i18n, image upload, custom toolbars, plugins, …).
-- [Plugins](./plugins.md) — the `definePlugin` contract, the `useChrome` / `useCommand` helpers, and the three reference plugins.
+- [How it works](./concepts.md) — architecture, the caret-safe contract, and the security model.

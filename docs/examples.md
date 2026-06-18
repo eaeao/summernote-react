@@ -2,7 +2,7 @@
 
 Runnable TSX recipes for `@eaeao/summernote-react` — a React + TypeScript port of summernote with **zero runtime dependencies and no jQuery**. Each recipe mirrors a demo from [summernote.org/examples](https://summernote.org/examples/) but is fully adapted to our React component API.
 
-> New here? Start with [Getting Started](./getting-started.md) for installation and the basics, then come back for these recipes. For the full prop / handle / command / option contracts, see the [API reference](./deep-dive.md).
+> New here? Start with [Getting Started](./getting-started.md) for installation and the basics, then come back for these recipes. For the full prop / handle / command / option contracts, see the [API reference](./reference-component.md).
 
 ## Contents
 
@@ -129,7 +129,7 @@ export function RefEditor() {
 }
 ```
 
-`command(name, ...args)` dispatches any engine or plugin command and returns whether it ran. Common commands: `bold`, `italic`, `underline`, `insertText`, `formatH1`–`formatH6`, `insertOrderedList`, `insertImage`, `createLink`. See the [command catalog](./deep-dive.md#commands--commandname-args) for the full set.
+`command(name, ...args)` dispatches any engine or plugin command and returns whether it ran. Common commands: `bold`, `italic`, `underline`, `insertText`, `formatH1`–`formatH6`, `insertOrderedList`, `insertImage`, `createLink`. See the [command catalog](./reference-commands.md) for the full set.
 
 ---
 
@@ -217,7 +217,7 @@ const koKR = locales['ko-KR'];
 <SummernoteEditor lang={koKR} />;
 ```
 
-The 46 bundled locale codes are listed in the [i18n reference](./deep-dive.md#internationalization-i18n). (en-US is the always-present base.)
+The 46 bundled locale codes are listed in the [i18n reference](./reference-options.md#internationalization-i18n). (en-US is the always-present base.)
 
 ---
 
@@ -286,7 +286,7 @@ To hide the toolbar entirely, pass an empty array:
 
 Built-in items fall into three sets: **dropdowns** (`style`, `fontname`, `fontsize`, `fontsizeunit`, `height`, `color`, `paragraph`, `table`), **format buttons** (`bold`, `italic`, `underline`, `strikethrough`, `superscript`, `subscript`, `clear`, `ul`, `ol`, `hr`, `undo`, `redo`), and **action buttons** (`link`, `picture`, `video`, `fullscreen`, `codeview`, `help`). Any other name resolves to a custom/plugin button (see [Custom plugin](#custom-plugin)).
 
-The full item-name tables (with bound command and active/disabled state) and the default toolbar layout are in the [API reference](./deep-dive.md#toolbar--popover-item-names).
+The full item-name tables (with bound command and active/disabled state) and the default toolbar layout are in the [toolbar reference](./reference-options.md#toolbar--popover-item-names).
 
 ---
 
@@ -416,24 +416,25 @@ export function PluginEditor() {
 - Guard commands with `core.ownsRange(range)` so they only act inside their own editable.
 - Button components may use `useChrome()` (for `core`, `state`, `lang`, `options`, `ui`, `codeviewActive`, `onImageUpload`, …) and `useCommand()` (a selection-preserving dispatcher). Both throw if rendered outside `<SummernoteEditor>`.
 
-For the full plugin contract, the `useChrome` / `useCommand` helpers, and the three reference plugins (`helloPlugin`, `specialcharsPlugin`, `databasicPlugin`), see [Plugins](./plugins.md).
+For the full plugin contract, the `useChrome` / `useCommand` helpers, and the three reference plugins (`helloPlugin`, `specialcharsPlugin`, `databasicPlugin`), see the [plugin API](./reference-api.md#plugins--defineplugin).
 
 ---
 
 ## Reference
 
-These recipes use a handful of props and the imperative handle. For the complete contracts — every `<SummernoteEditor>` prop, the `SummernoteEditorHandle` members, the full `command(name, …)` catalog, and all engine options — see the [API reference](./deep-dive.md):
+These recipes use a handful of props and the imperative handle. For the complete contracts — every `<SummernoteEditor>` prop, the `SummernoteEditorHandle` members, the full `command(name, …)` catalog, and all engine options — see the reference:
 
-- Props → [Props reference](./deep-dive.md#props-reference)
-- Imperative ref → [`SummernoteEditorHandle`](./deep-dive.md#imperative-ref--summernoteeditorhandle)
-- Commands → [Commands](./deep-dive.md#commands--commandname-args)
-- Headless hook → [`useSummernote`](./deep-dive.md#headless-usesummernote--createeditorcore)
+- Props → [Props reference](./reference-component.md#props-reference)
+- Imperative ref → [`SummernoteEditorHandle`](./reference-component.md#imperative-ref--summernoteeditorhandle)
+- Commands → [Commands](./reference-commands.md)
+- Options → [Options & toolbar](./reference-options.md)
+- Headless hook → [`useSummernote`](./reference-api.md#headless-usesummernote--createeditorcore)
 
 ---
 
 ## See also
 
 - [Getting Started](./getting-started.md) — install + first editor
-- [API reference](./deep-dive.md) — props, handle, commands, options, `EditorState`
-- [Plugins](./plugins.md) — the `definePlugin` contract and reference plugins
+- [Component & state](./reference-component.md) — props, handle, `EditorState`, callbacks
+- [Headless & plugin API](./reference-api.md) — `definePlugin` and the reference plugins
 - [summernote.org/examples](https://summernote.org/examples/) — the original jQuery demos these recipes mirror

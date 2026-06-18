@@ -13,14 +13,20 @@ export interface DocMeta {
   slug: string;
   file: string;
   title: string;
+  /** Diátaxis section for sidebar grouping; ungrouped (Overview) when omitted. */
+  section?: string;
 }
 
 export const DOC_ORDER: DocMeta[] = [
   { slug: 'readme', file: 'README.md', title: 'Overview' },
-  { slug: 'getting-started', file: 'getting-started.md', title: 'Getting started' },
-  { slug: 'deep-dive', file: 'deep-dive.md', title: 'Deep dive' },
-  { slug: 'examples', file: 'examples.md', title: 'Examples' },
-  { slug: 'plugins', file: 'plugins.md', title: 'Plugins' },
+  { slug: 'getting-started', file: 'getting-started.md', title: 'Getting started', section: 'Tutorial' },
+  { slug: 'examples', file: 'examples.md', title: 'Examples', section: 'How-to' },
+  { slug: 'reference-component', file: 'reference-component.md', title: 'Component & state', section: 'Reference' },
+  { slug: 'reference-commands', file: 'reference-commands.md', title: 'Commands', section: 'Reference' },
+  { slug: 'reference-options', file: 'reference-options.md', title: 'Options & toolbar', section: 'Reference' },
+  { slug: 'reference-api', file: 'reference-api.md', title: 'Headless & plugin API', section: 'Reference' },
+  { slug: 'concepts', file: 'concepts.md', title: 'How it works', section: 'Explanation' },
+  { slug: 'migrating', file: 'migrating.md', title: 'Migrating from jQuery', section: 'Explanation' },
 ];
 
 const rawByFile: Record<string, string> = {};

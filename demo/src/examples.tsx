@@ -9,6 +9,8 @@ import {
   type ThemeName,
   type ToolbarGroup,
 } from '@eaeao/summernote-react';
+import { useLocale } from './components/useLocale';
+import { t } from './components/ui-strings';
 
 export interface Example {
   id: string;
@@ -22,9 +24,10 @@ export interface Example {
 // ── shared UI bits ──────────────────────────────────────────────────────────
 function Snippet({ code }: { code: string }): JSX.Element {
   const [copied, setCopied] = useState(false);
+  const s = t(useLocale()).pg;
   return (
     <details className="snippet" open>
-      <summary>code</summary>
+      <summary>{s.code}</summary>
       <div style={{ position: 'relative' }}>
         <button
           className="btn"
@@ -35,7 +38,7 @@ function Snippet({ code }: { code: string }): JSX.Element {
             window.setTimeout(() => setCopied(false), 1200);
           }}
         >
-          {copied ? '✓ copied' : 'copy'}
+          {copied ? s.copied : s.copy}
         </button>
         <pre className="codeblock">{code}</pre>
       </div>
@@ -396,3 +399,19 @@ export const EXAMPLES: Example[] = [
   { id: 'custom-plugin', emoji: '🔌', title: 'Custom button / plugin', group: 'Recipes', blurb: 'definePlugin adds per-instance commands + custom toolbar buttons (here: highlight + timestamp).', Component: PluginEx },
   { id: 'imperative-ref', emoji: '🎛️', title: 'Imperative API', group: 'Recipes', blurb: 'A ref exposes getCode / setCode / command / focus / undo / redo.', Component: ImperativeRef },
 ];
+
+// Korean title/blurb overrides, keyed by example id (the demo code inside each card stays English).
+export const EXAMPLE_KO: Record<string, { title: string; blurb: string }> = {
+  basic: { title: '기본', blurb: '기본 에디터 — 전체 툴바가 자체 명령 엔진에 연결되어 있습니다.' },
+  controlled: { title: 'Controlled 값', blurb: 'value / onChange로 제어하며 HTML을 실시간 표시. React가 값을, 엔진이 커서를 소유합니다.' },
+  placeholder: { title: '플레이스홀더', blurb: '비어 있는 editable 위에 표시되는 플레이스홀더.' },
+  'air-mode': { title: '에어 모드', blurb: '고정 툴바 없음 — 선택 위치에 떠 있는 툴바가 나타납니다(터치에서는 아래).' },
+  themes: { title: '테마', blurb: 'lite / bs3 / bs4 / bs5를 CSS 스킨으로. 인스턴스별 — 서로 다른 테마가 공존합니다.' },
+  localization: { title: '현지화', blurb: '46개 번들 로케일, en-US 위에 deep-merge. lang prop으로 전달합니다.' },
+  'insert-image': { title: '이미지 업로드', blurb: 'onImageUpload 훅: 선택한 파일을 업로더로 보내고 반환된 URL을 삽입 — 또는 base64로 폴백.' },
+  'multiple-editors': { title: '다중 에디터', blurb: '한 페이지에 독립적인 여러 에디터, 각자 테마와 상태를 가집니다.' },
+  'click-to-edit': { title: '클릭하여 편집', blurb: '렌더된 콘텐츠를 보여주다가 편집 시 에디터로, 저장 시 다시 뷰로 전환합니다.' },
+  'custom-toolbar': { title: '커스텀 툴바', blurb: '툴바는 [group, names][] 설정일 뿐 — 줄이거나 직접 구성합니다.' },
+  'custom-plugin': { title: '커스텀 버튼 / 플러그인', blurb: 'definePlugin으로 인스턴스별 명령 + 커스텀 툴바 버튼 추가(여기서는 형광펜 + 타임스탬프).' },
+  'imperative-ref': { title: '명령형 API', blurb: 'ref로 getCode / setCode / command / focus / undo / redo 노출.' },
+};

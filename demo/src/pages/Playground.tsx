@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { EXAMPLES, type Example } from '../examples';
+import { EXAMPLES, EXAMPLE_KO, type Example } from '../examples';
 import { useScrollSpy } from '../components/useScrollSpy';
+import { useLocale } from '../components/useLocale';
+import { t } from '../components/ui-strings';
 
 const GROUPS = EXAMPLES.reduce<Record<string, Example[]>>((acc, ex) => {
   (acc[ex.group] ||= []).push(ex);
@@ -10,8 +12,14 @@ const GROUPS = EXAMPLES.reduce<Record<string, Example[]>>((acc, ex) => {
 const isWide = (): boolean => typeof window !== 'undefined' && window.innerWidth >= 1040;
 
 export function Playground(): JSX.Element {
+  const locale = useLocale();
+  const s = t(locale).pg;
   const [open, setOpen] = useState(isWide);
   const activeId = useScrollSpy(EXAMPLES.map((e) => e.id)) || EXAMPLES[0].id;
+
+  const exTitle = (ex: Example): string => (locale === 'ko' && EXAMPLE_KO[ex.id] ? EXAMPLE_KO[ex.id].title : ex.title);
+  const exBlurb = (ex: Example): string => (locale === 'ko' && EXAMPLE_KO[ex.id] ? EXAMPLE_KO[ex.id].blurb : ex.blurb);
+  const groupLabel = (g: string): string => s.groups[g] ?? g;
 
   const closeOnNarrow = (): void => {
     if (!isWide()) setOpen(false);
@@ -22,12 +30,11 @@ export function Playground(): JSX.Element {
       <div className="page-col">
         <header className="pg-head">
           <h1 className="pg-title">
-            Playground <span className="grad">·</span> live examples
+            {s.titlePre}
+            <span className="grad">·</span>
+            {s.titlePost}
           </h1>
-          <p className="pg-tag">
-            Every recipe below is a real <code>&lt;SummernoteEditor&gt;</code> running on the source engine — edit any of
-            them right here. Copy the snippet under each card.
-          </p>
+          <p className="pg-tag">{s.tag}</p>
         </header>
 
         <main className="sections">
@@ -38,9 +45,9 @@ export function Playground(): JSX.Element {
                   <a className="anchor" href={`#${ex.id}`} aria-label={`Link to ${ex.title}`}>
                     #
                   </a>
-                  {ex.emoji} {ex.title}
+                  {ex.emoji} {exTitle(ex)}
                 </h1>
-                <p>{ex.blurb}</p>
+                <p>{exBlurb(ex)}</p>
               </div>
               <ex.Component />
             </section>
@@ -55,7 +62,7 @@ export function Playground(): JSX.Element {
       {/* bookmark rail — pinned to the right edge of .page, follows the scroll (sticky) */}
       <nav className={`bookmark${open ? ' open' : ''}`}>
         <div className="bookmark-bar">
-          <span className="bookmark-heading">📑 Examples</span>
+          <span className="bookmark-heading">{s.examplesHeading}</span>
           <button className="iconbtn sm" onClick={() => setOpen((o) => !o)} aria-label="Toggle examples menu">
             {open ? '×' : '≡'}
           </button>
@@ -64,7 +71,7 @@ export function Playground(): JSX.Element {
           <div className="bookmark-list">
             {Object.entries(GROUPS).map(([group, items]) => (
               <div key={group}>
-                <div className="bookmark-group">{group}</div>
+                <div className="bookmark-group">{groupLabel(group)}</div>
                 {items.map((ex) => (
                   <a
                     key={ex.id}
@@ -73,7 +80,7 @@ export function Playground(): JSX.Element {
                     onClick={closeOnNarrow}
                   >
                     <span className="emoji">{ex.emoji}</span>
-                    {ex.title}
+                    {exTitle(ex)}
                   </a>
                 ))}
               </div>

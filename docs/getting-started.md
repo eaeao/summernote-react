@@ -122,15 +122,7 @@ interface SummernoteEditorHandle {
 }
 ```
 
-| Member | Signature | Behavior |
-|---|---|---|
-| `focus` | `() => void` | Focuses the editable. |
-| `getCode` | `() => string` | Current editable HTML (`''` before mount). |
-| `setCode` | `(html: string) => void` | Replaces the content. |
-| `command` | `(name, ...args) => boolean` | Dispatches any engine/plugin command (e.g. `'bold'`, `'insertText'`). Returns whether it ran. |
-| `undo` | `() => void` | Undo. |
-| `redo` | `() => void` | Redo. |
-| `core` | `EditorCore \| null` | The raw engine instance (escape hatch; `null` until mounted). |
+Each member (`focus`, `getCode`, `setCode`, `command`, `undo`, `redo`, and the raw `core` escape hatch) is documented in the [`SummernoteEditorHandle` reference](./deep-dive.md#imperative-ref--summernoteeditorhandle).
 
 ```tsx
 import { useRef } from 'react';
@@ -150,7 +142,7 @@ export function WithRef() {
 }
 ```
 
-The `command(name, ...args)` method is the React equivalent of summernote's string-dispatch API (`summernote('insertText', 'hi')`). See the [Engine API](./deep-dive.md) for the full command catalog (`bold`, `insertText`, `insertImage`, `createLink`, `insertTable`, `formatH1`…`formatH6`, `undo`, `redo`, and more).
+The `command(name, ...args)` method is the React equivalent of summernote's string-dispatch API (`summernote('insertText', 'hi')`). See the [command catalog](./deep-dive.md#commands--commandname-args) for the full set (`bold`, `insertText`, `insertImage`, `createLink`, `insertTable`, `formatH1`…`formatH6`, `undo`, `redo`, and more).
 
 ---
 
@@ -158,23 +150,14 @@ The `command(name, ...args)` method is the React equivalent of summernote's stri
 
 The props you'll reach for first:
 
-| Prop | Type | Default | Description |
-|---|---|---|---|
-| `value` | `string` | — | Controlled HTML value (see [Controlled](#controlled)). |
-| `defaultValue` | `string` | — | Uncontrolled initial HTML, applied once at mount. |
-| `onChange` | `(html: string) => void` | — | Fired after content changes; receives the new editable HTML. |
-| `toolbar` | `readonly ToolbarGroup[]` | default toolbar | `[group, [itemName…]]` tuples. See [Toolbar](#customizing-the-toolbar). |
-| `placeholder` | `string` | — | Placeholder shown over an empty editor. |
-| `theme` | `'lite' \| 'bs3' \| 'bs4' \| 'bs5'` | `'lite'` | Visual theme, per instance. See [Themes](#themes). |
-| `lang` | `LangPartial` | en-US | Locale, deep-merged over en-US. See [i18n](#internationalization-i18n). |
-| `airMode` | `boolean` | `false` | No fixed toolbar/statusbar; a floating toolbar appears at the selection. |
-| `disableResize` | `boolean` | `false` | Hides the resize statusbar. |
-| `plugins` | `readonly SummernotePlugin[]` | — | Per-instance plugins. See [Plugins](#plugins). |
-| `onImageUpload` | `(file: File) => string \| Promise<string>` | — | Image-upload hook; return/resolve the `src`. See [Image upload](#image-upload). |
-| `options` | `Omit<EditorCoreOptions, 'value' \| 'onChange'>` | — | Pass-through engine options (`historyLimit`, `shortcuts`, `keyMap`, `isMac`). |
-| `className` | `string` | — | Extra class appended to the root element. |
+- `value` / `defaultValue` — controlled / uncontrolled HTML (see [above](#controlled-vs-uncontrolled)).
+- `onChange(html)` — fires after every committed change.
+- `toolbar` — `[group, [itemName…]]` tuples (see [below](#customizing-the-toolbar)).
+- `theme` — `'lite' | 'bs3' | 'bs4' | 'bs5'`, per instance (see [Themes](#themes)).
+- `lang` — locale, deep-merged over en-US (see [i18n](#internationalization-i18n)).
+- `placeholder`, `airMode`, `disableResize`, `plugins`, `onImageUpload`, `options`, `className`.
 
-`ToolbarGroup` is `readonly [string, readonly string[]]`. The full prop, option, and state surface is documented in the [Component API](./deep-dive.md).
+The **complete** prop table — every prop, type, default, and the `options` / `EditorState` surface — lives in the [Props reference](./deep-dive.md#props-reference).
 
 ---
 
@@ -194,28 +177,13 @@ The `toolbar` prop is an array of `[groupName, [itemName, …]]` tuples — the 
 />
 ```
 
-The default toolbar is:
-
-```ts
-[
-  ['style',    ['style', 'fontsize', 'height']],
-  ['font',     ['bold', 'underline', 'clear']],
-  ['fontname', ['fontname']],
-  ['color',    ['color']],
-  ['para',     ['ul', 'ol', 'paragraph']],
-  ['table',    ['table']],
-  ['insert',   ['link', 'picture', 'video']],
-  ['view',     ['fullscreen', 'codeview', 'help']],
-]
-```
-
 Recognized item names:
 
 - **Dropdowns**: `style`, `fontname`, `fontsize`, `fontsizeunit`, `height` (line height), `color`, `paragraph`, `table`.
 - **Format buttons**: `bold`, `italic`, `underline`, `strikethrough`, `superscript`, `subscript`, `clear`, `ul`, `ol`, `hr`, `undo`, `redo`.
 - **Action buttons**: `link`, `picture`, `video`, `fullscreen`, `codeview`, `help`.
 
-Any other name resolves to a custom plugin button (see [Plugins](#plugins)). See the [Engine API](./deep-dive.md) for the complete item list and the default contextual popover layouts.
+Any other name resolves to a custom plugin button (see [Plugins](#plugins)). The default toolbar layout, the full item-name tables, and the contextual popover layouts are in the [toolbar reference](./deep-dive.md#toolbar--popover-item-names).
 
 ---
 
@@ -251,7 +219,7 @@ You can also supply an ad-hoc partial override (unspecified keys fall back to En
 <SummernoteEditor lang={{ link: { insert: '링크 삽입' } }} />
 ```
 
-Available codes include `ar-AR, de-DE, es-ES, fr-FR, it-IT, ja-JP, ko-KR, pt-BR, ru-RU, zh-CN, zh-TW`, and more (46 in total; en-US is the always-present base). See the [Plugins, Themes & i18n guide](./deep-dive.md) for the full list and tree-shakeable single-locale imports.
+Available codes include `ar-AR, de-DE, es-ES, fr-FR, it-IT, ja-JP, ko-KR, pt-BR, ru-RU, zh-CN, zh-TW`, and more (46 in total; en-US is the always-present base). See the [i18n reference](./deep-dive.md#internationalization-i18n) for the full list and tree-shakeable single-locale imports.
 
 ---
 
@@ -268,7 +236,7 @@ By default a picked image is embedded as a base64 data URL. Provide an `onImageU
 />
 ```
 
-The handler is `(file: File) => string | Promise<string>`, called once per picked file. While the promise is pending the editor shows a loading spinner in place; on rejection the placeholder is removed and never leaks into the saved value or the undo stack. Inserting an image by URL through the picture dialog works regardless of the hook. See [Plugins, Themes & i18n](./deep-dive.md) for details.
+The handler is `(file: File) => string | Promise<string>`, called once per picked file. While the promise is pending the editor shows a loading spinner in place; on rejection the placeholder is removed and never leaks into the saved value or the undo stack. Inserting an image by URL through the picture dialog works regardless of the hook. See the [`onImageUpload` reference](./deep-dive.md#callbacks--onchange-onimageupload) for details.
 
 ---
 
@@ -315,7 +283,7 @@ const starPlugin = definePlugin({
 <SummernoteEditor plugins={[starPlugin]} toolbar={[['insert', ['star']]]} />;
 ```
 
-Three reference plugins ship in the box: `helloPlugin`, `specialcharsPlugin`, `databasicPlugin`. See [Plugins, Themes & i18n](./plugins.md) for the full `definePlugin` contract and `useChrome` / `useCommand` helpers.
+Three reference plugins ship in the box: `helloPlugin`, `specialcharsPlugin`, `databasicPlugin`. See [Plugins](./plugins.md) for the full `definePlugin` contract and `useChrome` / `useCommand` helpers.
 
 ---
 
@@ -347,12 +315,12 @@ The engine surface (e.g. `EditorCore`, `EditorState`, `EditorCoreOptions`) is al
 
 ### Headless hook
 
-For full control over layout and markup, `useSummernote(options)` returns `{ editableRef, core, state }`. Attach `editableRef` to your own `contentEditable` `.note-editable` div; the engine owns that subtree imperatively, and `state` (an `EditorState`) drives your custom chrome via `useSyncExternalStore`. See the [Component API](./deep-dive.md) for the hook contract.
+For full control over layout and markup, `useSummernote(options)` returns `{ editableRef, core, state }`. Attach `editableRef` to your own `contentEditable` `.note-editable` div; the engine owns that subtree imperatively, and `state` (an `EditorState`) drives your custom chrome via `useSyncExternalStore`. See the [headless reference](./deep-dive.md#headless-usesummernote--createeditorcore) for the hook contract.
 
 ---
 
 ## Next steps
 
-- [Component API](./deep-dive.md) — every `<SummernoteEditor>` prop, the `SummernoteEditorHandle` ref, controlled/uncontrolled semantics, the `useSummernote` headless hook, and `ChromeContext`.
-- [Engine API](./deep-dive.md) — default options, the full command catalog for `ref.command(...)`, toolbar/popover item names, `EditorState`, and `EditorCore` methods.
-- [Plugins, Themes & i18n](./deep-dive.md) — the `definePlugin` contract, the three reference plugins, the `onImageUpload` hook, the 46 bundled locales, and the theme/CSS import map.
+- [API reference](./deep-dive.md) — every `<SummernoteEditor>` prop, the `SummernoteEditorHandle` ref, the full `command(...)` catalog, engine options, `EditorState`, the `useSummernote` headless hook, and the controlled caret-safe / codeview-XSS contracts.
+- [Examples](./examples.md) — copy-pasteable recipes (air mode, themes, i18n, image upload, custom toolbars, plugins, …).
+- [Plugins](./plugins.md) — the `definePlugin` contract, the `useChrome` / `useCommand` helpers, and the three reference plugins.

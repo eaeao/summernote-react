@@ -2,7 +2,7 @@
 
 Extend `@eaeao/summernote-react` with per-instance **commands** and **toolbar buttons** using `definePlugin` — the React/TypeScript replacement for jQuery summernote's global `$.summernote.plugins`.
 
-> This is a React port. There is no `$('.x').summernote(...)`, no `$.extend($.summernote.plugins, …)`, and no jQuery. A plugin is plain data (`{ name, commands?, buttons? }`) passed to the `<SummernoteEditor>` `plugins` prop. See [Getting started](./getting-started.md), the [component API](./deep-dive.md), and the [engine API](./deep-dive.md) for the surrounding surface.
+> This is a React port. There is no `$('.x').summernote(...)`, no `$.extend($.summernote.plugins, …)`, and no jQuery. A plugin is plain data (`{ name, commands?, buttons? }`) passed to the `<SummernoteEditor>` `plugins` prop. See [Getting started](./getting-started.md) and the [API reference](./deep-dive.md) for the surrounding surface.
 
 ---
 
@@ -81,7 +81,7 @@ function MyButton() {
 
 > The `onMouseDown` `preventDefault()` is load-bearing: without it, clicking the toolbar blurs the editable and the selection collapses before the command runs. `useCommand()` is built precisely to dispatch `core.command(name, ...args)` while keeping the editable's selection.
 
-You can also dispatch imperatively through the [editor ref](./deep-dive.md):
+You can also dispatch imperatively through the [editor ref](./deep-dive.md#imperative-ref--summernoteeditorhandle):
 
 ```tsx
 const ref = useRef<SummernoteEditorHandle>(null);
@@ -162,7 +162,7 @@ export default function Editor() {
 
 ### Putting a button in a popover instead
 
-The same names work in the contextual `popover` config (`image` / `link` / `table` / `air`). Those layouts use the identical `[group, [names]]` tuple format — see [engine API → default options](./deep-dive.md). The built-in popover button names carry over for parity, e.g. image popover groups `resize` (`resizeFull`, `resizeHalf`, `resizeQuarter`, `resizeNone`), `float` (`floatLeft`, `floatRight`, `floatNone`), `remove` (`removeMedia`).
+The same names work in the contextual `popover` config (`image` / `link` / `table` / `air`). Those layouts use the identical `[group, [names]]` tuple format — see the [options reference](./deep-dive.md#options-reference-options-prop). The built-in popover button names carry over for parity, e.g. image popover groups `resize` (`resizeFull`, `resizeHalf`, `resizeQuarter`, `resizeNone`), `float` (`floatLeft`, `floatRight`, `floatNone`), `remove` (`removeMedia`).
 
 ---
 
@@ -341,7 +341,7 @@ A command receives the `EditorCore` directly, so prefer the engine surface over 
 | Anchor under the caret (link dialogs) | `core.getAnchorInfo()` |
 | Is a range inside this editor? | `core.ownsRange(range)` |
 
-See the full list in the [engine API → commands](./deep-dive.md). Note that `escape`, `insertParagraph`, and `linkDialog.show` are **not** commands — they are keymap methods routed to the engine's `onShortcut`; and codeview/fullscreen/help are chrome `ChromeUI` actions, not engine commands.
+See the full list in the [command catalog](./deep-dive.md#commands--commandname-args). Note that `escape`, `insertParagraph`, and `linkDialog.show` are **not** commands — they are keymap methods routed to the engine's `onShortcut`; and codeview/fullscreen/help are chrome `ChromeUI` actions, not engine commands.
 
 ---
 
@@ -361,7 +361,7 @@ import { SummernoteEditor, locales } from '@eaeao/summernote-react';
 <SummernoteEditor lang={locales['ko-KR']} plugins={[myPlugin]} />;
 ```
 
-See [Plugins, Themes & i18n](./deep-dive.md) for the 46 bundled locales and `resolveLang`.
+See the [i18n reference](./deep-dive.md#internationalization-i18n) for the 46 bundled locales and `resolveLang`.
 
 ---
 
@@ -394,4 +394,4 @@ The jQuery plugins page contains several copy-paste hazards (a stray `}` closing
 - Engine commands & `registerCommand`/`ownsRange`: `src/engine/EditorCore.ts`
 - Toolbar item names & default config: `src/toolbar/registry.tsx`, `src/engine/options.ts`
 
-See also: [Getting started](./getting-started.md) · [Component API](./deep-dive.md) · [Engine API](./deep-dive.md) · [Plugins, Themes & i18n](./deep-dive.md)
+See also: [Getting started](./getting-started.md) · [API reference](./deep-dive.md) · [Examples](./examples.md)

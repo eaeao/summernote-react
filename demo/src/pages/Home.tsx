@@ -23,13 +23,6 @@ export function Home(): JSX.Element {
   return (
     <div className="home">
       <header className="hero">
-        <div className="hero-brand">
-          <span className="brand-logo">✦</span>
-          <div>
-            <div className="brand-name">summernote&#8209;react</div>
-            <div className="brand-sub">@eaeao · v1.2</div>
-          </div>
-        </div>
         <h1 className="hero-title">
           React summernote, <span className="grad">reimagined</span>.
         </h1>

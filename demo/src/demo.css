@@ -72,12 +72,6 @@ code {
 .hero {
   padding: 40px 0 26px;
 }
-.hero-brand {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  margin-bottom: 22px;
-}
 .brand-logo {
   width: 36px;
   height: 36px;
@@ -88,15 +82,6 @@ code {
   color: #fff;
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
   box-shadow: var(--shadow);
-}
-.brand-name {
-  font-weight: 700;
-  font-size: 15px;
-  line-height: 1.1;
-}
-.brand-sub {
-  font-size: 11px;
-  color: var(--muted);
 }
 .hero-title {
   margin: 0 0 10px;

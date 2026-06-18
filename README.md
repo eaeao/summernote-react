@@ -1,13 +1,13 @@
 # @eaeao/summernote-react
 
 [![npm](https://img.shields.io/npm/v/@eaeao/summernote-react.svg)](https://www.npmjs.com/package/@eaeao/summernote-react)
-[![demo](https://img.shields.io/badge/demo-live-8a2be2)](https://eaeao.github.io/summernote-react/)
+[![docs](https://img.shields.io/badge/docs-live-8a2be2)](https://eaeao.github.io/summernote-react/)
 [![license](https://img.shields.io/npm/l/@eaeao/summernote-react.svg)](./LICENSE)
 ![runtime deps: 0](https://img.shields.io/badge/runtime%20deps-0-brightgreen)
 ![no jQuery](https://img.shields.io/badge/jQuery-0-brightgreen)
 ![types](https://img.shields.io/badge/types-included-blue)
 
-**▶ Live demo: <https://eaeao.github.io/summernote-react/>**
+**📖 [Docs](https://eaeao.github.io/summernote-react/docs) · ▶ [Playground](https://eaeao.github.io/summernote-react/playground)** — live at <https://eaeao.github.io/summernote-react/>
 
 A **React + TypeScript** port of the [summernote](https://summernote.org) WYSIWYG editor — the
 editor engine and the React bindings in **one package**, with **zero runtime dependencies** and **no
@@ -52,6 +52,17 @@ import { useSummernote, createEditorCore } from '@eaeao/summernote-react';
 // createEditorCore(el, opts) -> the framework-agnostic engine (commands + EditorState)
 ```
 
+## Documentation
+
+Full docs (with a live playground) are at **<https://eaeao.github.io/summernote-react/>**:
+
+- [Getting started](https://eaeao.github.io/summernote-react/docs/getting-started) — install and build your first editor.
+- [Examples](https://eaeao.github.io/summernote-react/docs/examples) — copy-paste recipes (air mode, themes, i18n, image upload, plugins…).
+- Reference — [Component & state](https://eaeao.github.io/summernote-react/docs/reference-component), [Commands](https://eaeao.github.io/summernote-react/docs/reference-commands), [Options & toolbar](https://eaeao.github.io/summernote-react/docs/reference-options), [Headless & plugin API](https://eaeao.github.io/summernote-react/docs/reference-api).
+- [How it works](https://eaeao.github.io/summernote-react/docs/concepts) — architecture, the caret-safe contract, and the security model.
+- [Migrating from jQuery](https://eaeao.github.io/summernote-react/docs/migrating) — the legacy → React mapping.
+- [Use with AI](https://eaeao.github.io/summernote-react/docs/use-with-ai) — AGENTS.md / SKILL.md, Context7, agent rules, and llms.txt.
+
 ## Features
 
 - **Full chrome**: toolbar + dropdowns (style / font / size / line-height / paragraph / color /
@@ -74,6 +85,8 @@ import { useSummernote, createEditorCore } from '@eaeao/summernote-react';
 | `lang` | a locale: `lang={locales['ko-KR']}` |
 | `onImageUpload(file)` | upload a picked image yourself; return/resolve the `src` to insert (else base64) |
 | `airMode`, `placeholder`, `disableResize`, `plugins` | see types |
+
+Full props, the `command()` catalog, and engine options are in the [reference docs](https://eaeao.github.io/summernote-react/docs/reference-component).
 
 ## Image upload
 
@@ -125,35 +138,34 @@ Reference plugins ship in the box: `helloPlugin`, `specialcharsPlugin`, `databas
 - **Security** — code-view HTML is purified (script/style/object/embed/non-whitelisted iframes
   stripped); link hrefs reject `javascript:` / `data:` schemes.
 
-## Demo
+## Use with AI
 
-**Live: <https://eaeao.github.io/summernote-react/>** (themes, 46 locales, air mode, a custom plugin,
-controlled HTML, the imperative ref, two editors coexisting).
+The package ships machine-readable guidance so AI coding assistants integrate it without guessing the API:
 
-Or run it locally — the [`demo/`](demo) app loads the editor straight from source:
+- **[`AGENTS.md`](AGENTS.md)** and **[`SKILL.md`](SKILL.md)** are bundled in the npm tarball (version-pinned) — readable straight from `node_modules`.
+- **[Context7](https://context7.com/eaeao/summernote-react)** serves the docs to your tool on demand, version-pinned.
+- The docs site publishes **[`llms.txt`](https://eaeao.github.io/summernote-react/llms.txt)** + a per-page `.md` mirror, and every docs page has a **Copy page** button.
+
+See **[Use with AI](https://eaeao.github.io/summernote-react/docs/use-with-ai)** for setup snippets and a drop-in agent-rules block.
+
+## Playground
+
+The [live site](https://eaeao.github.io/summernote-react/) pairs the docs with an interactive **[Playground](https://eaeao.github.io/summernote-react/playground)** — themes, 46 locales, air mode, a custom plugin, controlled HTML, the imperative ref, two editors coexisting. Run it locally (it loads the editor straight from source):
 
 ```bash
 cd demo && yarn install && yarn dev      # http://localhost:5173
 ```
 
-> Hosting: the [`deploy-demo`](.github/workflows/deploy-demo.yml) workflow builds `demo/` and
-> publishes it to GitHub Pages on every push to `main`. One-time: repo **Settings → Pages → Source =
-> GitHub Actions**.
-
 ## Development
 
 ```bash
 yarn install
-yarn verify   # jQuery-ban + zero-dep gates + typecheck
-yarn test     # full suite, both engines  (heavy — see docs/STATUS.md)
+yarn verify   # jQuery-ban + zero-dep + version gates + typecheck
+yarn test     # full suite, both engines (Chromium + WebKit)
 yarn build    # dual ESM + CJS + .d.ts
 ```
 
-Design + status: [docs/PORTING-PLAN.md](docs/PORTING-PLAN.md), [docs/STATUS.md](docs/STATUS.md).
-
-## For AI agents
-
-The package ships machine-readable usage guidance in its npm tarball: [`AGENTS.md`](AGENTS.md) (a dense, self-contained reference) and [`SKILL.md`](SKILL.md) (an Anthropic Agent Skill entry). Both are version-pinned and kept in sync with the release. Combined with the bundled TypeScript declarations, they let coding agents integrate the editor without guessing the API.
+> The [`deploy-demo`](.github/workflows/deploy-demo.yml) workflow builds `demo/` and publishes it (docs + playground + `llms.txt`) to GitHub Pages on every push to `main`. One-time: repo **Settings → Pages → Source = GitHub Actions**.
 
 ## License
 

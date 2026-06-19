@@ -1,6 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react';
 import {
-  SummernoteEditor,
   definePlugin,
   useCommand,
   locales,
@@ -9,6 +8,9 @@ import {
   type ThemeName,
   type ToolbarGroup,
 } from '@eaeao/summernote-react';
+// In the demo, editors follow the site's light/dark toggle. `<SummernoteEditor>` here renders the
+// theme-following DemoEditor wrapper; the code SNIPPETS still show the real `SummernoteEditor` API.
+import { DemoEditor as SummernoteEditor } from './components/DemoEditor';
 import { useLocale } from './components/useLocale';
 import { t } from './components/ui-strings';
 

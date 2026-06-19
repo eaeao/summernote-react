@@ -1,6 +1,6 @@
 # AGENTS.md — `@eaeao/summernote-react`
 
-Guidance for AI coding agents integrating this package. This document describes `@eaeao/summernote-react@1.4.0`. It ships its own TypeScript declarations — treat the bundled `.d.ts` as the source of truth; this file is the orientation.
+Guidance for AI coding agents integrating this package. This document describes `@eaeao/summernote-react@1.4.1`. It ships its own TypeScript declarations — treat the bundled `.d.ts` as the source of truth; this file is the orientation.
 
 `@eaeao/summernote-react` is a **React + TypeScript port of summernote**: the editing engine and the React bindings in one npm package, with **zero runtime dependencies** and **no jQuery / no `document.execCommand`**. It is a normal React component — there is no `$('.x').summernote(...)` and no global state.
 

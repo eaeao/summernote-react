@@ -2,7 +2,7 @@
  * Headless, framework-agnostic editor engine.
  */
 // synced from package.json by scripts/sync-version.mjs (enforced by scripts/check-version.mjs).
-export const CORE_VERSION: string = '1.4.0';
+export const CORE_VERSION: string = '1.4.1';
 
 export { EditorCore, createEditorCore } from './EditorCore';
 export type { EditorState, EditorCoreOptions, EditorAlign, CommandName } from './EditorCore';

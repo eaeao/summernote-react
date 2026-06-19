@@ -10,7 +10,7 @@ description: >-
 
 # summernote-react
 
-This skill describes `@eaeao/summernote-react@1.4.0`, a React + TypeScript port of the summernote WYSIWYG editor — the editing engine and React bindings in one npm package, **zero runtime dependencies, no jQuery, no `document.execCommand`**. It is a normal React component, not a jQuery plugin.
+This skill describes `@eaeao/summernote-react@1.4.1`, a React + TypeScript port of the summernote WYSIWYG editor — the editing engine and React bindings in one npm package, **zero runtime dependencies, no jQuery, no `document.execCommand`**. It is a normal React component, not a jQuery plugin.
 
 ## When to use
 

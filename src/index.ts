@@ -2,7 +2,7 @@
  * summernote-react — the React + TS summernote port (engine + React bindings in one package).
  */
 // synced from package.json by scripts/sync-version.mjs (enforced by scripts/check-version.mjs).
-export const VERSION: string = '1.4.0';
+export const VERSION: string = '1.4.1';
 
 // the headless engine API is part of this single package
 export * from './engine';
